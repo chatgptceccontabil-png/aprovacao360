@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aprovação 360°</title>
+  <meta name="theme-color" content="#1B2F48">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <!-- Tela de carregamento -->
+  <div id="tela-carregando" class="centro">
+    <p class="suave">Carregando…</p>
+  </div>
+
+  <!-- Configuração pendente (config.js não preenchido) -->
+  <div id="tela-config" class="centro escuro" hidden>
+    <div class="cartao-login">
+      <h1>Aprovação 360°</h1>
+      <p><strong>Falta conectar o banco de dados.</strong></p>
+      <p class="suave">Abra o arquivo <code>js/config.js</code> e cole a <em>Project URL</em> e a chave <em>anon public</em> do seu projeto Supabase (Project Settings → API). O passo a passo está em <code>docs/GUIA-CONFIGURACAO.md</code>.</p>
+    </div>
+  </div>
+
+  <!-- Entrar -->
+  <div id="tela-login" class="centro escuro" hidden>
+    <div class="cartao-login">
+      <svg class="logo" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#0A6CDB" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      <h1>Aprovação 360°</h1>
+      <p class="suave">Sua IA estuda com você. Aqui fica a memória.</p>
+      <button id="btn-google" class="btn btn-primario btn-grande">Entrar com Google</button>
+      <p id="login-erro" class="erro" hidden>Não foi possível entrar. Verifique sua conexão e tente de novo.</p>
+    </div>
+  </div>
+
+  <!-- Aplicação -->
+  <div id="app" hidden>
+    <header class="cabecalho">
+      <div class="marca">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        <span>Aprovação 360°</span>
+      </div>
+      <label class="seletor-concurso">
+        <span class="sr">Concurso ativo</span>
+        <select id="sel-concurso" aria-label="Concurso ativo"></select>
+      </label>
+      <div class="espaco"></div>
+      <div class="usuario">
+        <img id="usuario-foto" alt="" width="32" height="32" hidden>
+        <span id="usuario-nome"></span>
+        <button id="btn-sair" class="btn btn-fantasma">Sair</button>
+      </div>
+    </header>
+
+    <div class="corpo">
+      <nav class="menu" aria-label="Menu principal">
+        <a href="#/hoje" data-tela="hoje">Hoje</a>
+        <a href="#/importar" data-tela="importar">Importar</a>
+        <a href="#/edital" data-tela="edital">Edital</a>
+        <a href="#/revisoes" data-tela="revisoes">Revisões</a>
+        <a href="#/erros" data-tela="erros">Erros</a>
+        <a href="#/ciclo" data-tela="ciclo">Ciclo</a>
+        <a href="#/simulados" data-tela="simulados">Simulados</a>
+        <a href="#/biblioteca" data-tela="biblioteca">Biblioteca</a>
+        <a href="#/concursos" data-tela="concursos">Concursos</a>
+        <a href="#/configuracoes" data-tela="configuracoes">Configurações</a>
+      </nav>
+      <main id="conteudo" class="conteudo" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <div id="aviso" class="aviso" role="status" hidden></div>
+  <div id="banner-conexao" class="banner-conexao" role="alert" hidden>
+    Não consegui falar com o banco. Se você ficou mais de 7 dias sem usar, reative o projeto em supabase.com → seu projeto → Restore.
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

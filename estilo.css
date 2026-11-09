@@ -1,0 +1,100 @@
+/* Aprovação 360° — padrão visual (projeto, seção 9) */
+:root {
+  --primaria: #0A6CDB;
+  --marinho: #1B2F48;
+  --aco: #4A6F96;
+  --prata: #D8DDE4;
+  --fundo: #F5F7FA;
+  --superficie: #FFFFFF;
+  --texto: #1A1D23;
+  --texto-suave: #5B6472;
+  --sucesso: #2E7D32;
+  --alerta: #B26A00;
+  --erro: #C62828;
+  --raio: 8px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  color: var(--texto);
+  background: var(--fundo);
+  line-height: 1.5;
+}
+[hidden] { display: none !important; }
+h1 { font-size: 24px; margin: 0 0 16px; color: var(--marinho); }
+h2 { font-size: 18px; margin: 0 0 12px; color: var(--marinho); }
+code { background: #EEF1F5; padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+.suave { color: var(--texto-suave); }
+.erro { color: var(--erro); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* Botões */
+.btn {
+  font: inherit; font-weight: 600; border-radius: var(--raio); border: 1px solid transparent;
+  padding: 10px 16px; min-height: 44px; cursor: pointer;
+}
+.btn-primario { background: var(--primaria); color: #fff; }
+.btn-primario:hover { background: #0859B5; }
+.btn-secundario { background: #fff; color: var(--primaria); border-color: var(--primaria); }
+.btn-fantasma { background: transparent; color: #fff; border-color: rgba(255,255,255,.4); min-height: 36px; padding: 6px 12px; font-size: 13px; }
+.btn-grande { font-size: 16px; padding: 14px 24px; width: 100%; }
+.btn:focus-visible, a:focus-visible, select:focus-visible { outline: 3px solid #8CC0FF; outline-offset: 2px; }
+
+/* Telas centralizadas (carregando, login, config) */
+.centro { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.escuro { background: var(--marinho); }
+.cartao-login {
+  background: var(--superficie); border-radius: 12px; padding: 40px 32px; max-width: 420px; width: 100%;
+  text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center;
+}
+.cartao-login h1 { margin: 0; }
+
+/* Cabeçalho */
+.cabecalho {
+  background: var(--marinho); color: #fff; display: flex; flex-wrap: wrap; align-items: center;
+  gap: 16px; padding: 10px 24px; position: sticky; top: 0; z-index: 10;
+}
+.marca { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; }
+.seletor-concurso select {
+  font: inherit; font-size: 13px; color: #fff; background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.25); border-radius: var(--raio); padding: 6px 10px; max-width: 320px;
+}
+.seletor-concurso option { color: var(--texto); }
+.espaco { flex: 1 1 auto; }
+.usuario { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.usuario img { border-radius: 50%; }
+
+/* Corpo: menu + conteúdo */
+.corpo { display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; max-width: 1400px; margin: 0 auto; }
+.menu { flex: 1 1 200px; max-width: 240px; display: flex; flex-direction: column; gap: 4px; }
+.menu a {
+  display: block; padding: 10px 14px; border-radius: var(--raio); color: var(--marinho);
+  text-decoration: none; font-weight: 500; min-height: 44px;
+}
+.menu a:hover { background: #E8EEF5; }
+.menu a.ativo { background: var(--primaria); color: #fff; font-weight: 600; }
+.conteudo { flex: 999 1 560px; min-width: 0; }
+.cartao { background: var(--superficie); border: 1px solid var(--prata); border-radius: 12px; padding: 20px; }
+.vazio { text-align: center; padding: 48px 20px; color: var(--texto-suave); }
+
+/* Avisos */
+.aviso {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--marinho);
+  color: #fff; padding: 12px 20px; border-radius: 10px; max-width: 90vw; z-index: 50;
+  box-shadow: 0 6px 24px rgba(0,0,0,.2);
+}
+.banner-conexao {
+  position: fixed; top: 0; left: 0; right: 0; background: var(--erro); color: #fff;
+  padding: 12px 24px; z-index: 60; text-align: center;
+}
+
+/* Celular: menu vira barra horizontal rolável */
+@media (max-width: 720px) {
+  .cabecalho { padding: 10px 16px; }
+  .corpo { padding: 16px; gap: 16px; }
+  .menu { max-width: none; flex-direction: row; overflow-x: auto; flex-basis: 100%; }
+  .menu a { white-space: nowrap; }
+  .usuario span { display: none; }
+}
