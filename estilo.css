@@ -180,6 +180,17 @@ a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 .linha-assunto .col-ativ { width: 170px; }
 .acoes-linha { display: flex; gap: 4px; }
 
+/* Revisões */
+.linha-revisao { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid #EEF1F5; }
+.rev-info { flex: 1 1 260px; }
+.forte { font-weight: 600; }
+.rev-acoes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.inp-pct { width: 80px; font: inherit; padding: 8px; border: 1px solid var(--prata); border-radius: var(--raio); min-height: 36px; }
+.inp-data { font: inherit; padding: 6px 8px; border: 1px solid var(--prata); border-radius: var(--raio); min-height: 36px; }
+h2.erro { color: var(--erro); } h2.alerta { color: var(--alerta); } h2.aco { color: var(--aco); } h2.suave { color: var(--texto-suave); }
+.linha-assunto .col-q { width: 110px; }
+details summary { cursor: pointer; color: var(--primaria); padding: 6px 0; }
+
 /* Painel lateral */
 .painel-fundo { position: fixed; inset: 0; background: rgba(27,47,72,.45); z-index: 40; display: flex; justify-content: flex-end; }
 .painel { background: #fff; width: 100%; max-width: 560px; height: 100%; display: flex; flex-direction: column; box-shadow: -8px 0 32px rgba(0,0,0,.15); }

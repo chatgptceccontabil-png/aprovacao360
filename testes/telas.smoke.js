@@ -23,6 +23,8 @@ function q(tabela) {
         let data;
         if (op === 'insert') { data = payload.map(p => { const r = Object.assign({ id: 'id' + (++seq), usuario_id: UID, excluido_em: null }, p); if (tabela === 'a360_assuntos') r.status = r.status || 'nao_iniciado'; T(tabela).push(r); return r; }); }
         else if (op === 'update') { data = T(tabela).filter(r => filtros.every(f => f(r))); data.forEach(r => Object.assign(r, payload)); }
+        else if (tabela === 'a360_v_revisoes') { data = T('a360_revisoes').filter(r=>r.status==='pendente').map(r=>{const a=T('a360_assuntos').find(x=>x.id===r.assunto_id);const d=T('a360_disciplinas').find(x=>x.id===a.disciplina_id);return {...r,assunto:a.descricao,disciplina:d.nome,disciplina_id:d.id,concurso_id:d.concurso_id};}).filter(r => filtros.every(f => f(r))); }
+        else if (tabela === 'a360_v_assuntos_stats') { data = T('a360_assuntos').map(a=>{const d=T('a360_disciplinas').find(x=>x.id===a.disciplina_id);const q=T('a360_questoes').filter(x=>x.assunto_id===a.id);const r=T('a360_revisoes').find(x=>x.assunto_id===a.id&&x.status==='pendente');return {assunto_id:a.id,concurso_id:d.concurso_id,feitas:q.reduce((s,x)=>s+x.feitas,0),acertos:q.reduce((s,x)=>s+x.acertos,0),dias:1,proxima_revisao:r?r.data_prevista:null,etapa_revisao:r?r.etapa:null};}).filter(r => filtros.every(f => f(r))); }
         else { data = T(tabela).filter(r => filtros.every(f => f(r)));
           if (embed && tabela === 'a360_disciplinas') data = data.map(d => ({ concurso_id: d.concurso_id, a360_assuntos: T('a360_assuntos').filter(a => a.disciplina_id === d.id) })); }
         data = JSON.parse(JSON.stringify(data));
@@ -33,7 +35,23 @@ function q(tabela) {
   };
   return api;
 }
-function rpc(nome, { dados }) {
+function addD(iso,n){const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
+function regRev(ass, R, data){ const ET=[1,7,30,60]; let p=T('a360_revisoes').find(r=>r.assunto_id===ass&&r.status==='pendente'); let et=1, orig=data;
+  if(p){p.status='concluida';p.resultado=R;et=p.etapa;orig=p.data_estudo_original;} let i=ET.indexOf(et); if(R>=85)i=Math.min(i+1,3); else if(R<70)i=Math.max(i-1,0);
+  const n=ET[i]; T('a360_revisoes').push({id:'id'+(++seq),assunto_id:ass,etapa:n,data_prevista:addD(data,n),data_estudo_original:orig,status:'pendente',excluido_em:null}); return {etapa:n,data_prevista:addD(data,n)}; }
+function rpc(nome, args) {
+  if (nome==='a360_registrar_revisao') return Promise.resolve({data:regRev(args.p_assunto,args.p_resultado,args.p_data),error:null});
+  if (nome==='a360_importar_checkpoint') { const d=args.dados;
+    if (T('a360_checkpoints').some(c=>c.hash===d.hash)) return Promise.resolve({data:null,error:{message:'CHECKPOINT_DUPLICADO 09/11/2026'}});
+    T('a360_checkpoints').push({id:'id'+(++seq),hash:d.hash,criado_em:'2026-11-09T10:00:00Z',excluido_em:null}); const map={}; const msgs=[];
+    d.novos_assuntos.forEach(n=>{const r={id:'id'+(++seq),disciplina_id:n.disciplina_id,descricao:n.descricao,status:'nao_iniciado',ordem:99,excluido_em:null};T('a360_assuntos').push(r);map[n.chave]=r.id;});
+    const A=x=>x.assunto_id||map[x.assunto_chave]||null;
+    d.sessoes.forEach(x=>{const a=A(x);T('a360_sessoes').push({...x,assunto_id:a,data:d.data}); if(a&&x.status==='REALIZADO'&&!T('a360_revisoes').some(r=>r.assunto_id===a)){T('a360_revisoes').push({id:'id'+(++seq),assunto_id:a,etapa:1,data_prevista:addD(d.data,1),data_estudo_original:d.data,status:'pendente',excluido_em:null});msgs.push('1ª revisão');} const as=T('a360_assuntos').find(z=>z.id===a); if(as) as.status='em_estudo';});
+    d.questoes.forEach(x=>T('a360_questoes').push({...x,assunto_id:A(x),data:d.data}));
+    d.erros.forEach(x=>T('a360_erros').push({...x,assunto_id:A(x)}));
+    d.revisoes.forEach(x=>{regRev(A(x),x.resultado,d.data);msgs.push('rev');});
+    return Promise.resolve({data:{data:d.data,sessoes:d.sessoes.length,questoes:d.questoes.length,questoes_feitas:d.questoes.reduce((s,x)=>s+x.feitas,0),erros:d.erros.length,revisoes:d.revisoes.length,assuntos_novos:d.novos_assuntos.length,mensagens:msgs},error:null}); }
+  const dados = args.dados;
   let cid = dados.concurso_id, novo = false, nd = 0, nu = 0, na = 0;
   if (!cid) { const c = { id: 'id' + (++seq), usuario_id: UID, excluido_em: null, ...dados.concurso, prioritario: !T('a360_concursos').some(x => x.prioritario), status: 'publicado' }; T('a360_concursos').push(c); cid = c.id; novo = true; }
   dados.disciplinas.forEach(d => { let id = d.id;
@@ -46,7 +64,7 @@ w.supabase = { createClient: () => ({ from: q, rpc, auth: {
   onAuthStateChange(cb) { setTimeout(() => cb('SIGNED_IN', { user: { id: UID, email: 'eu@x.com', user_metadata: {} } }), 0); },
   getSession: () => Promise.resolve({ data: { session: { user: { id: UID } } }, error: null }), signOut: () => Promise.resolve({}) } }) };
 w.A360_CONFIG = { SUPABASE_URL: 'https://a.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_x' };
-['js/util.js','js/parsers.js','js/ui.js','js/telas-base.js','js/telas-edital.js','js/app.js'].forEach(f => w.eval(fs.readFileSync(R + f, 'utf8')));
+['js/util.js','js/parsers.js','js/ui.js','js/telas-base.js','js/telas-edital.js','js/telas-checkpoint.js','js/app.js'].forEach(f => w.eval(fs.readFileSync(R + f, 'utf8')));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const $ = s => w.document.querySelector(s), txt = () => w.document.getElementById('conteudo').textContent.replace(/\s+/g, ' ');
 const go = async h => { w.location.hash = h; await sleep(60); };
@@ -90,6 +108,34 @@ ASSUNTO | Português | 1 | Crase
   console.log('12 cadastrado:', T('a360_concursos').length, '| prioritário do novo:', T('a360_concursos')[1].prioritario);
   await go('#/configuracoes'); console.log('13 config:', /Suas IAs/.test(txt()));
   await go('#/hoje'); console.log('14 hoje:', /Edital coberto/.test(txt()), /dias até a prova|Dias até a prova/.test(txt()));
-  await go('#/revisoes'); console.log('15 placeholder:', /etapa 4/.test(txt()));
+  await go('#/erros'); console.log('15 placeholder:', /etapa 6/.test(txt()));
+  // ---- etapa 4 ----
+  const cp = `=== CHECKPOINT ===
+data: 2026-11-09
+concurso: ISS-SP-AFTM-2026
+conversa: Aula
+ia: ChatGPT
+SESSAO | Direito Tributário | Lançamento | aula | REALIZADO | 50
+QUESTOES | Direito Tributário | Lancamento | 10 | 7
+ERRO | Direito Tributário | Lançamento por homologação | pegadinha | quem antecipa é o sujeito passivo
+REVISAO | Português | Crase | 90
+QUESTOES | Direito Tributário | Lançamento | 3 | 9
+=== FIM ===`;
+  await go('#/importar');
+  console.log('16 aba padrão checkpoint:', !!$('#txt-checkpoint'));
+  $('#txt-checkpoint').value = cp; click(btn('Analisar')); await sleep(80);
+  console.log('17 prévia:', /IA: ChatGPT/.test(txt()), /⚠ decidir/.test(txt()), /✖ inválida/.test(txt()), 'confirmar desativado:', btn('Confirmar').disabled);
+  click(btn('Criar novo assunto')); await sleep(20);
+  console.log('18 após decidir:', btn('Confirmar').disabled, '|', btn('Confirmar').textContent);
+  click(btn('Confirmar')); await sleep(150);
+  console.log('19 resultado:', /importado/.test(txt()), '| sessões:', T('a360_sessoes').length, '| revisões pendentes:', T('a360_revisoes').filter(r=>r.status==='pendente').length, '| erros:', T('a360_erros').length);
+  $('#txt-checkpoint').value = cp; click(btn('Analisar')); await sleep(80);
+  console.log('20 duplicado:', /já foi importado/.test(txt()));
+  await go('#/revisoes'); await sleep(50);
+  console.log('21 revisões:', /Lançamento/.test(txt()), /Crase/.test(txt()), /Mais adiante|Próximos 7 dias/.test(txt()));
+  const inp = w.document.querySelector('.inp-pct'); inp.value = '90'; click(btn('Registrar')); await sleep(80);
+  console.log('22 registrar:', T('a360_revisoes').some(r=>r.status==='concluida'&&r.resultado===90&&r.etapa===1), T('a360_revisoes').some(r=>r.status==='pendente'&&r.etapa===7));
+  await go('#/edital'); await sleep(50);
+  console.log('23 edital stats:', /10 q · 70%/.test(txt()), /revisão/.test(txt()));
   process.exit(0);
 })().catch(e => { console.error('FALHOU', e); process.exit(1); });

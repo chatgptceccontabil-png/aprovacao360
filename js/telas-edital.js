@@ -17,7 +17,15 @@
           if (r2.error) throw r2.error;
           var por = {}; discs.forEach(function (d) { d.assuntos = []; por[d.id] = d; });
           (r2.data || []).forEach(function (a) { if (por[a.disciplina_id]) por[a.disciplina_id].assuntos.push(a); });
-          return discs;
+          // desempenho por assunto (etapa 4); se a visão ainda não existir, segue sem números
+          return sb.from('a360_v_assuntos_stats').select('assunto_id,feitas,acertos,dias,proxima_revisao,etapa_revisao').eq('concurso_id', concursoId).then(function (r3) {
+            var st = {}; if (!r3.error) (r3.data || []).forEach(function (x) { st[x.assunto_id] = x; });
+            discs.forEach(function (d) {
+              d.feitas = 0; d.acertos = 0;
+              d.assuntos.forEach(function (a) { a.stats = st[a.id] || null; if (a.stats) { d.feitas += a.stats.feitas; d.acertos += a.stats.acertos; } });
+            });
+            return discs;
+          }, function () { return discs; });
         });
     });
   }
@@ -26,7 +34,7 @@
   // IMPORTAR
   // ------------------------------------------------------------------
   A360T.importar = function (ctx, el) {
-    var aba = /aba=checkpoint/.test(location.hash) ? 'checkpoint' : 'edital';
+    var aba = /aba=edital/.test(location.hash) ? 'edital' : (ctx.estado.concursos.length ? 'checkpoint' : 'edital');
     el.appendChild(h('h1', null, 'Importar'));
     var abas = h('div', { class: 'abas', role: 'tablist' });
     var corpo = h('div');
@@ -35,7 +43,7 @@
       abas.querySelectorAll('button').forEach(function (b) { var on = b.getAttribute('data-aba') === aba; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
       corpo.innerHTML = '';
       if (aba === 'edital') abaEdital(ctx, corpo);
-      else corpo.appendChild(UI.vazio('Importação do CHECKPOINT chega na etapa 4.', 'Enquanto isso, guarde os CHECKPOINTs que a IA gerar: eles poderão ser colados aqui depois e entram com a data original.'));
+      else window.A360ABAS.checkpoint(ctx, corpo);
     }
     [['checkpoint', 'CHECKPOINT'], ['edital', 'EDITAL']].forEach(function (a) {
       abas.appendChild(h('button', { role: 'tab', 'data-aba': a[0], onclick: function () { mudar(a[0]); } }, a[1]));
@@ -173,7 +181,10 @@
     var inc = UI.selecao(notas, d.incidencia, { 'aria-label': 'Incidência de ' + d.nome, class: 'sel-peq' });
     // RN05 (sem dados de acerto ainda: usa 0,5)
     var prio = h('span', { class: 'pequeno suave' });
-    function atualizaPrio() { prio.textContent = 'prioridade ' + U.num1(d.peso * d.incidencia * 0.5) + ' (acerto ainda sem dados: 50%)'; }
+    function atualizaPrio() {
+      var temDados = (d.feitas || 0) >= 10, ac = temDados ? d.acertos / d.feitas : 0.5;
+      prio.textContent = 'prioridade ' + U.num1(d.peso * d.incidencia * (1 - ac)) + (temDados ? ' · acerto ' + U.pct(d.acertos, d.feitas) + ' em ' + d.feitas + ' questões' : ' (acerto sem dados suficientes: 50%)');
+    }
     atualizaPrio();
     function salvarNota() {
       var np = parseInt(peso.value, 10), ni = parseInt(inc.value, 10);
@@ -190,7 +201,8 @@
         h('span', { class: 'item' }, a.item_edital || '—'),
         h('span', { class: 'desc' }, a.descricao, a.ultimo_ponto ? h('div', { class: 'pequeno suave' }, 'Último ponto: ' + a.ultimo_ponto) : null),
         UI.chipStatus(a.status),
-        h('span', { class: 'pequeno suave col-ativ' }, a.ultima_atividade ? 'última atividade ' + U.dataBR(a.ultima_atividade) : 'sem atividade'),
+        h('span', { class: 'pequeno suave col-q' }, a.stats && a.stats.feitas ? a.stats.feitas + ' q · ' + U.pct(a.stats.acertos, a.stats.feitas) : 'sem questões'),
+        h('span', { class: 'pequeno suave col-ativ' }, a.stats && a.stats.proxima_revisao ? 'revisão ' + U.dataBR(a.stats.proxima_revisao).slice(0, 5) : (a.ultima_atividade ? 'última atividade ' + U.dataBR(a.ultima_atividade) : 'sem atividade')),
         h('span', { class: 'acoes-linha' },
           h('button', { class: 'btn-link', onclick: function () { formAssunto(ctx, d, a); } }, 'Editar'),
           h('button', { class: 'btn-link perigo', onclick: function () { excluirAssunto(ctx, a); } }, 'Excluir'))));
