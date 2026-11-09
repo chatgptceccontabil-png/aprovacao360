@@ -8,6 +8,6 @@
 // regras do banco (RLS). NUNCA coloque aqui a chave "service_role".
 // =====================================================================
 window.A360_CONFIG = {
-  SUPABASE_URL: 'COLE_AQUI_A_PROJECT_URL',
-  SUPABASE_ANON_KEY: 'COLE_AQUI_A_ANON_KEY'
+  SUPABASE_URL: 'https://bfcgpcmffgkgxwvljven.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_YGrSd59lRXzpzNzmIDIA9g_VfnPMyvW'
 };
