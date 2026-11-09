@@ -215,6 +215,40 @@ details summary { cursor: pointer; color: var(--primaria); padding: 6px 0; }
 .pre-linha { white-space: pre-line; }
 .prompt-area { width: 100%; font-size: 12.5px; line-height: 1.5; padding: 12px; border: 1px solid var(--prata); border-radius: var(--raio); background: var(--fundo); }
 
+/* Caderno de erros */
+.barra-motivo { display: flex; align-items: center; gap: 10px; font-size: 14px; margin-bottom: 8px; }
+.bm-rot { width: 130px; }
+.bm-barra { flex: 1 1 auto; }
+.bm-barra .barra { margin-top: 0; }
+.barra-cheia.aco { background: var(--aco); }
+.linha-simples { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid #EEF1F5; font-size: 14px; }
+.linha-simples.cab { font-weight: 600; color: var(--texto-suave); border-top: 0; }
+.linha-erro { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid #EEF1F5; }
+.le-data { width: 46px; }
+.le-texto { flex: 1 1 320px; line-height: 1.5; }
+.btn-ok { background: #E7F4E8; color: #1F6B24; border-color: #B9DDBB; }
+h3 { font-size: 15px; color: var(--marinho); margin: 16px 0 8px; }
+
+/* Ciclo */
+.linha-ciclo { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding: 14px 0; border-top: 1px solid #EEF1F5; }
+.linha-ciclo:first-child { border-top: 0; }
+.lc-nome { flex: 1 1 220px; }
+.lc-num { width: 90px; text-align: right; }
+.lc-barra { flex: 1 1 180px; }
+.chip-prox { background: var(--primaria); color: #fff; }
+.previa-ciclo { background: var(--fundo); border-radius: var(--raio); padding: 8px 12px; }
+
+/* Simulados */
+.grafico { width: 100%; height: auto; max-height: 260px; }
+.linha-sim { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid #EEF1F5; }
+.linha-sim:first-child { border-top: 0; }
+.ls-info { flex: 1 1 300px; }
+.ls-pct { font-size: 18px; color: var(--marinho); width: 70px; text-align: right; }
+.tab-sim { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.ts-linha { display: grid; grid-template-columns: 1fr 90px 90px; gap: 8px; align-items: center; font-size: 14px; }
+.ts-linha.cab { font-weight: 600; color: var(--texto-suave); font-size: 13px; }
+.ts-linha input { font: inherit; padding: 8px; border: 1px solid var(--prata); border-radius: var(--raio); width: 100%; min-height: 40px; }
+
 /* Painel lateral */
 .painel-fundo { position: fixed; inset: 0; background: rgba(27,47,72,.45); z-index: 40; display: flex; justify-content: flex-end; }
 .painel { background: #fff; width: 100%; max-width: 560px; height: 100%; display: flex; flex-direction: column; box-shadow: -8px 0 32px rgba(0,0,0,.15); }

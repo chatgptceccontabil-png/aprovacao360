@@ -3,7 +3,7 @@ const { JSDOM } = require('jsdom');
 const fs = require('fs'), path = require('path'), R = path.join(__dirname, '..') + '/';
 const html = fs.readFileSync(R + 'index.html', 'utf8').replace(/<script src="https:[^"]+"><\/script>/, '').replace(/<script src="([^"]+)"><\/script>/g, '');
 const dom = new JSDOM(html, { url: 'https://x.github.io/aprovacao360/', runScripts: 'outside-only', pretendToBeVisual: true });
-const w = dom.window; w.confirm = () => true; w.console = console; const abertos = []; w.open = u => { abertos.push(u); return null; }; w.document.execCommand = () => true;
+const w = dom.window; w.confirm = () => true; w.console = console; const abertos = []; w.open = u => { abertos.push(u); return null; }; w.document.execCommand = () => true; w.URL.createObjectURL = () => 'blob:x'; w.URL.revokeObjectURL = () => {}; w.HTMLAnchorElement.prototype.click = function(){ baixados.push(this.download); }; const baixados = [];
 // ---- banco falso ----
 const DB = {}; let seq = 0; const UID = 'u1';
 const T = n => (DB[n] = DB[n] || []);
@@ -41,6 +41,11 @@ function regRev(ass, R, data){ const ET=[1,7,30,60]; let p=T('a360_revisoes').fi
   if(p){p.status='concluida';p.resultado=R;et=p.etapa;orig=p.data_estudo_original;} let i=ET.indexOf(et); if(R>=85)i=Math.min(i+1,3); else if(R<70)i=Math.max(i-1,0);
   const n=ET[i]; T('a360_revisoes').push({id:'id'+(++seq),assunto_id:ass,etapa:n,data_prevista:addD(data,n),data_estudo_original:orig,status:'pendente',excluido_em:null}); return {etapa:n,data_prevista:addD(data,n)}; }
 function rpc(nome, args) {
+  if (nome==='a360_aprovar_planejamento') { const d=args.dados; T('a360_planejamentos').forEach(p=>{if(p.concurso_id===d.concurso_id)p.vigente=false;}); const v=T('a360_planejamentos').filter(p=>p.concurso_id===d.concurso_id).length+1;
+    T('a360_planejamentos').push({id:'id'+(++seq),concurso_id:d.concurso_id,versao:v,horas_semana:d.horas_semana,meta_questoes_semana:d.meta_questoes_semana,observacoes:d.observacoes,vigente:true,data_aprovacao:'2026-11-09',excluido_em:null});
+    d.distribuicao.forEach(x=>{T('a360_disciplinas').find(z=>z.id===x.disciplina_id).horas_ciclo=x.horas;}); return Promise.resolve({data:{versao:v},error:null}); }
+  if (nome==='a360_salvar_simulado') { const d=args.dados; const id='id'+(++seq); T('a360_simulados').push({id,concurso_id:d.concurso_id,data:d.data,nome:d.nome,origem:d.origem,total_questoes:d.total_questoes,acertos:d.acertos,tempo_minutos:d.tempo_minutos,observacoes:d.observacoes,excluido_em:null});
+    d.disciplinas.forEach(x=>T('a360_simulado_disciplinas').push({...x,simulado_id:id,excluido_em:null})); return Promise.resolve({data:{simulado_id:id,percentual:Math.round(d.acertos*1000/d.total_questoes)/10},error:null}); }
   if (nome==='a360_registrar_revisao') return Promise.resolve({data:regRev(args.p_assunto,args.p_resultado,args.p_data),error:null});
   if (nome==='a360_importar_checkpoint') { const d=args.dados;
     if (T('a360_checkpoints').some(c=>c.hash===d.hash)) return Promise.resolve({data:null,error:{message:'CHECKPOINT_DUPLICADO 09/11/2026'}});
@@ -65,7 +70,7 @@ w.supabase = { createClient: () => ({ from: q, rpc, auth: {
   onAuthStateChange(cb) { setTimeout(() => cb('SIGNED_IN', { user: { id: UID, email: 'eu@x.com', user_metadata: {} } }), 0); },
   getSession: () => Promise.resolve({ data: { session: { user: { id: UID } } }, error: null }), signOut: () => Promise.resolve({}) } }) };
 w.A360_CONFIG = { SUPABASE_URL: 'https://a.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_x' };
-['js/util.js','js/parsers.js','js/calc.js','js/ui.js','js/telas-base.js','js/telas-edital.js','js/telas-checkpoint.js','js/telas-hoje.js','js/app.js'].forEach(f => w.eval(fs.readFileSync(R + f, 'utf8')));
+['js/util.js','js/parsers.js','js/calc.js','js/ui.js','js/telas-base.js','js/telas-edital.js','js/telas-checkpoint.js','js/telas-hoje.js','js/telas-estudo.js','js/app.js'].forEach(f => w.eval(fs.readFileSync(R + f, 'utf8')));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const $ = s => w.document.querySelector(s), txt = () => w.document.getElementById('conteudo').textContent.replace(/\s+/g, ' ');
 const go = async h => { w.location.hash = h; await sleep(60); };
@@ -109,7 +114,7 @@ ASSUNTO | Português | 1 | Crase
   console.log('12 cadastrado:', T('a360_concursos').length, '| prioritário do novo:', T('a360_concursos')[1].prioritario);
   await go('#/configuracoes'); console.log('13 config:', /Suas IAs/.test(txt()));
   await go('#/hoje'); console.log('14 hoje:', /Edital coberto/.test(txt()), /dias até a prova|Dias até a prova/.test(txt()));
-  await go('#/erros'); console.log('15 placeholder:', /etapa 6/.test(txt()));
+  await go('#/biblioteca'); console.log('15 placeholder:', /etapa 7/.test(txt()));
   // ---- etapa 4 ----
   const cp = `=== CHECKPOINT ===
 data: 2026-11-09
@@ -156,5 +161,29 @@ PROXIMA | /aula Direito Tributário > Competência tributária
   const pa2 = w.document.querySelectorAll('.prompt-area'); console.log('30 prompt assunto:', /escolhido por mim/.test(pa2[pa2.length-1].value));
   w.document.querySelectorAll('.painel-fundo').forEach(x=>x.remove());
   await go('#/importar?aba=edital'); console.log('31 rota com parâmetro:', !!$('#txt-edital'));
+  // ---- etapa 6 ----
+  await go('#/erros'); await sleep(60);
+  console.log('32 erros:', /1 erro\(s\)/.test(txt()), /Pegadinha/.test(txt()), /Lançamento por homologação/.test(txt()));
+  click(btn('Marcar revisado')); await sleep(40); console.log('33 revisado:', T('a360_erros')[0].revisado, /0 erro\(s\)/.test(txt()));
+  click(btn('Exportar CSV')); console.log('34 csv:', baixados[0]);
+  click(btn('+ Erro')); await sleep(20); w.document.querySelector('.painel textarea').value = 'Decadência: 5 anos (art. 173 CTN)'; click(btn('Registrar erro')); await sleep(80);
+  console.log('35 erro manual:', T('a360_erros').length, /1 erro\(s\)/.test(txt()));
+  click(btn('Treinar estes erros na IA')); await sleep(20); const pe = [...w.document.querySelectorAll('.prompt-area')].pop(); console.log('36 prompt erros:', /ERROS PARA TREINAR/.test(pe.value) && /\/erros/.test(pe.value));
+  w.document.querySelectorAll('.painel-fundo').forEach(x=>x.remove());
+  await go('#/ciclo'); await sleep(60);
+  console.log('37 ciclo sem plano:', /Defina suas horas/.test(txt()), /Próxima da vez/.test(txt()));
+  click(btn('Definir planejamento')); await sleep(20);
+  const hin = w.document.querySelector('.painel input'); hin.value = '25'; hin.dispatchEvent(new w.Event('input')); await sleep(10);
+  console.log('38 prévia:', /Prévia da distribuição/.test($('.painel').textContent), /h\b/.test(w.document.querySelector('.previa-ciclo').textContent));
+  click(btn('Aprovar')); await sleep(80);
+  console.log('39 aprovado:', T('a360_planejamentos').length, /Planejamento v1 · 25,0 h/.test(txt()), T('a360_disciplinas').filter(d=>d.horas_ciclo).length);
+  await go('#/hoje'); await sleep(60); console.log('40 hoje usa meta:', /de 25,0 h/.test(txt()));
+  await go('#/simulados'); await sleep(60); console.log('41 simulados vazio:', /Nenhum simulado/.test(txt()));
+  click(btn('+ Simulado')); await sleep(20);
+  let si = w.document.querySelectorAll('.painel input'); si[1].value = 'Simulado 1'; si[2].value = '80'; si[3].value = '90'; click(btn('Registrar simulado')); await sleep(20);
+  console.log('42 validação:', /maiores que o total/.test($('.painel').textContent));
+  si[3].value = '58'; si[6].value = '40'; si[7].value = '30'; click(btn('Registrar simulado')); await sleep(100);
+  console.log('43 salvo:', /72,5%/.test(txt()), !!w.document.querySelector('svg.grafico'), T('a360_simulado_disciplinas').length);
+  click(btn('Detalhe')); await sleep(20); console.log('44 detalhe:', /75,0%/.test($('.painel').textContent));
   process.exit(0);
 })().catch(e => { console.error('FALHOU', e); process.exit(1); });

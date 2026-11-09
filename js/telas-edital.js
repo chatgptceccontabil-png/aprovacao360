@@ -8,7 +8,7 @@
 
   // Carrega disciplinas + assuntos de um concurso
   function carregarEdital(sb, concursoId) {
-    return sb.from('a360_disciplinas').select('id,nome,peso,incidencia,ordem').eq('concurso_id', concursoId).is('excluido_em', null).order('ordem').then(function (r) {
+    return sb.from('a360_disciplinas').select('id,nome,peso,incidencia,ordem,horas_ciclo').eq('concurso_id', concursoId).is('excluido_em', null).order('ordem').then(function (r) {
       if (r.error) throw r.error;
       var discs = r.data || [];
       if (!discs.length) return [];

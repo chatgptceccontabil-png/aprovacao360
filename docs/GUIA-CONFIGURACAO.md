@@ -22,6 +22,7 @@ Ordem: **A** Supabase → **B** GitHub Pages → **C** login com e-mail e senha 
 5. Repita os passos 3 e 4, um de cada vez e nesta ordem, com os arquivos:
    - `supabase/02-importar-edital.sql` → resultado: "a360_importar_edital instalada"
    - `supabase/03-checkpoint-revisoes.sql` → resultado: "etapa 4 instalada: importar checkpoint e revisões"
+   - `supabase/04-ciclo-simulados.sql` → resultado: "etapa 6 instalada: ciclo e simulados"
 6. **Resultado esperado do primeiro script:** uma tabela com **13 linhas** (`a360_assuntos` … `a360_simulados`), todas com `rls = true`. Os avisos amarelos ("already exists, skipping") são normais.
 7. Pegue as chaves: **Project Settings** (engrenagem) → **API** / **API Keys**:
    - **Project URL** (algo como `https://abcdxyz.supabase.co`)

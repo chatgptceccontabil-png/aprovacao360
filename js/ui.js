@@ -64,10 +64,31 @@
     return m || 'Erro desconhecido.';
   }
 
+  // Gráfico de linha simples em SVG (0 a 100%), com rótulos e valores
+  function graficoLinha(pontos) {
+    var NS = 'http://www.w3.org/2000/svg';
+    function el(t, a) { var e = document.createElementNS(NS, t); Object.keys(a || {}).forEach(function (k) { e.setAttribute(k, a[k]); }); return e; }
+    var W = 640, H = 220, ml = 36, mr = 12, mt = 14, mb = 30, n = pontos.length;
+    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Evolução do percentual de acerto: ' + pontos.map(function (p) { return p.rotulo + ' ' + String(p.valor).replace('.', ',') + '%'; }).join(', '), class: 'grafico' });
+    function x(i) { return n === 1 ? (ml + W - mr) / 2 : ml + i * (W - ml - mr) / (n - 1); }
+    function y(v) { return mt + (100 - v) * (H - mt - mb) / 100; }
+    [0, 25, 50, 75, 100].forEach(function (v) {
+      svg.appendChild(el('line', { x1: ml, x2: W - mr, y1: y(v), y2: y(v), stroke: '#E3E8EF', 'stroke-width': 1 }));
+      var t = el('text', { x: ml - 6, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 11, fill: '#5B6472' }); t.textContent = v + '%'; svg.appendChild(t);
+    });
+    if (n > 1) svg.appendChild(el('polyline', { points: pontos.map(function (p, i) { return x(i) + ',' + y(p.valor); }).join(' '), fill: 'none', stroke: '#0A6CDB', 'stroke-width': 2.5 }));
+    pontos.forEach(function (p, i) {
+      svg.appendChild(el('circle', { cx: x(i), cy: y(p.valor), r: 4, fill: '#0A6CDB' }));
+      var v = el('text', { x: x(i), y: y(p.valor) - 9, 'text-anchor': 'middle', 'font-size': 11, fill: '#1B2F48', 'font-weight': 600 }); v.textContent = String(p.valor).replace('.', ','); svg.appendChild(v);
+      if (n <= 12 || i % Math.ceil(n / 12) === 0) { var r = el('text', { x: x(i), y: H - 10, 'text-anchor': 'middle', 'font-size': 11, fill: '#5B6472' }); r.textContent = p.rotulo; svg.appendChild(r); }
+    });
+    return svg;
+  }
+
   function copiar(texto) {
     if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(texto).then(function () { return true; }, function () { return false; });
     return Promise.resolve(false);
   }
 
-  window.A360UI = { campo: campo, entrada: entrada, selecao: selecao, painel: painel, chipStatus: chipStatus, barra: barra, vazio: vazio, erroBanco: erroBanco, copiar: copiar };
+  window.A360UI = { campo: campo, entrada: entrada, selecao: selecao, painel: painel, chipStatus: chipStatus, barra: barra, vazio: vazio, erroBanco: erroBanco, copiar: copiar, graficoLinha: graficoLinha };
 })();

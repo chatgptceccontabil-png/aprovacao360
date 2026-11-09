@@ -99,6 +99,8 @@
     var rows = C.distribuirCiclo(discs.map(function (d) {
       return { id: d.id, nome: d.nome, peso: d.peso, incidencia: d.incidencia, feitas: d.feitas, acertos: d.acertos, pendente: d.assuntos.some(function (a) { return a.status !== 'dominado'; }) };
     }), horas);
+    // RN10: com planejamento aprovado, valem as horas aprovadas
+    if (x.plano) rows.forEach(function (r) { var d = idsDisc[r.id]; if (d && d.horas_ciclo !== null && d.horas_ciclo !== undefined) r.horas = Number(d.horas_ciclo); });
     var asPorDisc = {}; discs.forEach(function (d) { asPorDisc[d.id] = d.assuntos; });
     var prox = discs.length ? C.proximaDaVez(rows, minSem, asPorDisc) : null;
     // revisões vencidas ou de hoje

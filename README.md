@@ -17,6 +17,7 @@ Plataforma pessoal de estudos para concursos em que **a IA (Claude ou ChatGPT) �
 | `supabase/schema.sql` | Script do banco (rodar no SQL Editor do Supabase) |
 | `supabase/02-importar-edital.sql` | Função de importação do EDITAL (rodar depois do schema) |
 | `supabase/03-checkpoint-revisoes.sql` | Importação do CHECKPOINT e motor de revisões (rodar depois do 02) |
+| `supabase/04-ciclo-simulados.sql` | Planejamento do ciclo e simulados (rodar depois do 03) |
 | `testes/` | Testes automáticos (`node testes/edital.test.js`, `node testes/checkpoint.test.js`, `node testes/calc.test.js`) |
 | `docs/` | Guias |
 
@@ -27,7 +28,7 @@ Plataforma pessoal de estudos para concursos em que **a IA (Claude ou ChatGPT) �
 - [x] Etapa 3: importar EDITAL + edital verticalizado (rodar `supabase/02-importar-edital.sql`)
 - [x] Etapa 4: importar CHECKPOINT + motor de revisões (rodar `supabase/03-checkpoint-revisoes.sql`)
 - [x] Etapa 5: painel Hoje + Prompt do Dia (Claude e ChatGPT)
-- [ ] Etapa 6: erros, ciclo e simulados
+- [x] Etapa 6: erros, ciclo e simulados (rodar `supabase/04-ciclo-simulados.sql`)
 - [ ] Etapa 7: cronômetro e biblioteca
 - [ ] Etapa 8: Registro Mestre, backup e exportações
 - [ ] Etapa 9: app no celular (PWA) e testes finais

@@ -225,7 +225,7 @@
     hoje: 'Hoje', importar: 'Importar', edital: 'Edital verticalizado', revisoes: 'Revisões', erros: 'Caderno de erros',
     ciclo: 'Ciclo de estudos', simulados: 'Simulados', biblioteca: 'Biblioteca', concursos: 'Concursos', configuracoes: 'Configurações e backup'
   };
-  var ETAPA = { erros: 6, ciclo: 6, simulados: 6, biblioteca: 7 };
+  var ETAPA = { biblioteca: 7 };
   var geracao = 0;
 
   function rotear() {
