@@ -3,7 +3,7 @@
 Plataforma pessoal de estudos para concursos em que **a IA (Claude ou ChatGPT) é a interface principal**: você estuda conversando com a IA, cola o CHECKPOINT no fim da sessão e a plataforma atualiza o edital verticalizado, as revisões espaçadas (1 → 7 → 30 → 60 dias), o caderno de erros e o ciclo de estudos.
 
 - **Endereço:** https://chatgptceccontabil-png.github.io/aprovacao360/
-- **Custo:** R$ 0 (GitHub Pages + Supabase gratuito + login Google)
+- **Custo:** R$ 0 (GitHub Pages + Supabase gratuito)
 - **Configuração inicial:** [`docs/GUIA-CONFIGURACAO.md`](docs/GUIA-CONFIGURACAO.md)
 
 ## Estrutura
@@ -19,7 +19,7 @@ Plataforma pessoal de estudos para concursos em que **a IA (Claude ou ChatGPT) �
 
 ## Andamento da construção
 
-- [x] **Etapa 1:** banco de dados (13 tabelas, segurança por usuário) + login com Google + navegação
+- [x] **Etapa 1:** banco de dados (13 tabelas, segurança por usuário) + login com e-mail e senha + navegação
 - [ ] Etapa 2: concursos e configurações
 - [ ] Etapa 3: importar EDITAL + edital verticalizado
 - [ ] Etapa 4: importar CHECKPOINT + motor de revisões

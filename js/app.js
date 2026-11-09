@@ -56,13 +56,23 @@
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     });
 
-    $('btn-google').addEventListener('click', entrarComGoogle);
+    $('form-login').addEventListener('submit', enviarLogin);
+    $('btn-alternar').addEventListener('click', alternarModo);
+    $('btn-esqueci').addEventListener('click', esqueciSenha);
+    if (/type=recovery/.test(window.location.hash)) modoNovaSenha = true;
     $('btn-sair').addEventListener('click', sair);
     $('sel-concurso').addEventListener('change', trocarConcurso);
     window.addEventListener('hashchange', rotear);
 
     sb.auth.onAuthStateChange(function (evento, sessao) {
-      if (sessao && sessao.user) { aoEntrar(sessao.user); }
+      if (evento === 'PASSWORD_RECOVERY') {
+        modoNovaSenha = true; mostrar('tela-login');
+        $('btn-entrar').textContent = 'Salvar nova senha'; $('login-email').closest('form').querySelector('label').hidden = true;
+        $('login-email').hidden = true; $('btn-alternar').hidden = true; $('btn-esqueci').hidden = true;
+        msgLogin('Digite a nova senha e clique em Salvar.', true);
+        return;
+      }
+      if (sessao && sessao.user && !modoNovaSenha) { aoEntrar(sessao.user); }
       else { estado.usuario = null; mostrar('tela-login'); }
     });
     sb.auth.getSession().then(function (r) {
@@ -71,11 +81,67 @@
     });
   }
 
-  function entrarComGoogle() {
-    $('login-erro').hidden = true;
-    var volta = window.location.origin + window.location.pathname;
-    sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: volta } }).then(function (r) {
-      if (r.error) { $('login-erro').hidden = false; registrarResultado(r.error); }
+  // ---------- entrar com e-mail e senha ----------
+  var modoCriar = false, modoNovaSenha = false;
+
+  function msgLogin(texto, ok) {
+    var el = $('login-msg'); el.textContent = texto; el.hidden = !texto;
+    el.className = ok ? 'ok' : 'erro';
+  }
+
+  function alternarModo() {
+    modoCriar = !modoCriar;
+    $('btn-entrar').textContent = modoCriar ? 'Criar minha conta' : 'Entrar';
+    $('btn-alternar').textContent = modoCriar ? 'Já tenho conta. Entrar' : 'Primeiro acesso? Criar minha conta';
+    $('login-senha').setAttribute('autocomplete', modoCriar ? 'new-password' : 'current-password');
+    msgLogin(modoCriar ? 'Use uma senha com pelo menos 8 caracteres.' : '', true);
+  }
+
+  function traduzErro(e) {
+    var m = String((e && e.message) || e || '');
+    if (/Invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
+    if (/Email not confirmed/i.test(m)) return 'Confirme seu e-mail pelo link que enviamos (veja também o spam).';
+    if (/already registered|already exists/i.test(m)) return 'Este e-mail já tem conta. Clique em "Já tenho conta. Entrar".';
+    if (/Signups not allowed|signup.*disabled/i.test(m)) return 'Novos cadastros estão desativados neste site.';
+    if (/Password should be|at least/i.test(m)) return 'A senha precisa ter pelo menos 8 caracteres.';
+    if (/rate limit|too many/i.test(m)) return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
+    if (/fetch|network|Failed/i.test(m)) return 'Sem conexão com o banco. Verifique a internet.';
+    return 'Não foi possível concluir: ' + m;
+  }
+
+  function enviarLogin(ev) {
+    ev.preventDefault();
+    var email = $('login-email').value.trim(), senha = $('login-senha').value;
+    if (modoNovaSenha) {
+      if (senha.length < 8) { msgLogin('A senha precisa ter pelo menos 8 caracteres.'); return; }
+      sb.auth.updateUser({ password: senha }).then(function (r) {
+        if (r.error) { msgLogin(traduzErro(r.error)); return; }
+        modoNovaSenha = false; history.replaceState(null, '', window.location.pathname);
+        msgLogin('Senha alterada.', true);
+        if (r.data && r.data.user) aoEntrar(r.data.user);
+      });
+      return;
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msgLogin('Informe um e-mail válido.'); return; }
+    if (senha.length < 8) { msgLogin('A senha precisa ter pelo menos 8 caracteres.'); return; }
+    $('btn-entrar').disabled = true;
+    var acao = modoCriar
+      ? sb.auth.signUp({ email: email, password: senha, options: { emailRedirectTo: window.location.origin + window.location.pathname } })
+      : sb.auth.signInWithPassword({ email: email, password: senha });
+    acao.then(function (r) {
+      $('btn-entrar').disabled = false;
+      registrarResultado(r.error);
+      if (r.error) { msgLogin(traduzErro(r.error)); return; }
+      if (modoCriar && !r.data.session) { msgLogin('Conta criada! Abra o e-mail de confirmação que enviamos e clique no link (veja também o spam).', true); }
+    });
+  }
+
+  function esqueciSenha() {
+    var email = $('login-email').value.trim();
+    if (!email) { msgLogin('Digite seu e-mail no campo acima e clique de novo em "Esqueci a senha".'); return; }
+    sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname }).then(function (r) {
+      if (r.error) { msgLogin(traduzErro(r.error)); return; }
+      msgLogin('Se o e-mail estiver cadastrado, você vai receber um link para criar uma nova senha.', true);
     });
   }
 

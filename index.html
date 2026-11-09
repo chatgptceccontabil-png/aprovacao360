@@ -30,8 +30,16 @@
       <svg class="logo" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#0A6CDB" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
       <h1>Aprovação 360°</h1>
       <p class="suave">Sua IA estuda com você. Aqui fica a memória.</p>
-      <button id="btn-google" class="btn btn-primario btn-grande">Entrar com Google</button>
-      <p id="login-erro" class="erro" hidden>Não foi possível entrar. Verifique sua conexão e tente de novo.</p>
+      <form id="form-login" class="form-login" novalidate>
+        <label for="login-email">E-mail</label>
+        <input id="login-email" type="email" autocomplete="email" required>
+        <label for="login-senha">Senha</label>
+        <input id="login-senha" type="password" autocomplete="current-password" minlength="8" required>
+        <button id="btn-entrar" type="submit" class="btn btn-primario btn-grande">Entrar</button>
+        <button id="btn-alternar" type="button" class="btn-link">Primeiro acesso? Criar minha conta</button>
+        <button id="btn-esqueci" type="button" class="btn-link">Esqueci a senha</button>
+      </form>
+      <p id="login-msg" class="erro" role="alert" hidden></p>
     </div>
   </div>
 

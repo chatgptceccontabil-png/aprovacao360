@@ -51,6 +51,18 @@ code { background: #EEF1F5; padding: 1px 6px; border-radius: 4px; font-size: 13p
 }
 .cartao-login h1 { margin: 0; }
 
+/* Formulário de entrada */
+.form-login { width: 100%; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.form-login label { font-size: 13px; font-weight: 600; color: var(--marinho); margin-top: 6px; }
+.form-login input {
+  font: inherit; padding: 12px; border: 1px solid var(--prata); border-radius: var(--raio); min-height: 44px;
+}
+.form-login input:focus { outline: 3px solid #8CC0FF; outline-offset: 1px; border-color: var(--primaria); }
+.form-login .btn-grande { margin-top: 12px; }
+.btn-link { background: none; border: 0; color: var(--primaria); font: inherit; font-size: 14px; cursor: pointer; padding: 8px; min-height: 40px; }
+.btn-link:hover { text-decoration: underline; }
+.ok { color: var(--sucesso); }
+
 /* Cabeçalho */
 .cabecalho {
   background: var(--marinho); color: #fff; display: flex; flex-wrap: wrap; align-items: center;

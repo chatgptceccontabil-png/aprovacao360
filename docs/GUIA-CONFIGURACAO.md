@@ -2,9 +2,9 @@
 
 Tempo total: **cerca de 25 minutos**, uma única vez. Tudo é feito no navegador e nada precisa ser instalado.
 
-Ordem: **A** Supabase → **B** GitHub Pages → **C** Google (login) → **D** ligar o Google no Supabase → **E** colar as chaves → **F** testar.
+Ordem: **A** Supabase → **B** GitHub Pages → **C** login com e-mail e senha → **E** chaves (já feito) → **F** testar.
 
-> Anote num bloco de notas os 4 itens que vão aparecer pelo caminho: **Project URL**, **chave anon/publishable**, **Client ID** e **Client Secret**.
+> ✅ A **Project URL** e a **chave publishable** já foram colocadas no site.
 
 ---
 
@@ -38,36 +38,25 @@ Ordem: **A** Supabase → **B** GitHub Pages → **C** Google (login) → **D** 
 
 ---
 
-## C. Google: liberar o "Entrar com Google" (10 min)
+## C. Login com e-mail e senha (3 min)
 
-1. Entre em **https://console.cloud.google.com** com o seu Google.
-2. No topo, abra o seletor de projetos → **Novo projeto** → nome `aprovacao360` → **Criar** e selecione o projeto.
-3. Menu → **APIs e serviços** → **Tela de consentimento OAuth** (ou **Google Auth Platform**) → **Começar**:
-   - Nome do app: `Aprovação 360°`; e-mail de suporte: o seu.
-   - Público: **Externo**.
-   - Contato: o seu e-mail → aceite e **Criar**.
-4. Em **Público** (*Audience*), deixe o status **Em teste** e, em **Usuários de teste**, adicione **o seu e-mail Google**.
-   💡 Assim, **só você** consegue entrar na plataforma. É uma camada extra de segurança.
-5. Abra a aba do **Supabase** (passo D.1 abaixo) só para copiar a **Callback URL**, que tem o formato `https://SEU-PROJETO.supabase.co/auth/v1/callback`.
-6. De volta ao Google: **Clientes** (*Clients*) → **Criar cliente**:
-   - Tipo: **Aplicativo da Web**; nome: `aprovacao360-web`
-   - **Origens JavaScript autorizadas:** `https://chatgptceccontabil-png.github.io` (sem `/aprovacao360` no final)
-   - **URIs de redirecionamento autorizados:** cole a **Callback URL** do Supabase
-   - **Criar** → copie o **Client ID** e o **Client Secret**.
+O login com Google foi trocado por **e-mail e senha**, que não exige nenhuma conta extra.
 
----
-
-## D. Ligar o Google no Supabase (3 min)
-
-1. Supabase → **Authentication** → **Sign In / Providers** (ou *Providers*) → **Google**:
-   - Ative **Enable Sign in with Google**.
-   - Cole o **Client ID** e o **Client Secret** do passo C.6.
-   - Aqui também aparece a **Callback URL** usada no passo C.5.
-   - **Save**.
-2. Supabase → **Authentication** → **URL Configuration**:
+1. Supabase → **Authentication** → **Sign In / Providers** → **Email**: confirme que está **ativado** (vem ativado por padrão).
+2. **Recomendado:** nessa mesma tela, **desligue "Confirm email"** → **Save**.
+   Assim, a conta é criada na hora, sem depender de e-mail de confirmação (o envio gratuito do Supabase é limitado).
+3. Supabase → **Authentication** → **URL Configuration**:
    - **Site URL:** `https://chatgptceccontabil-png.github.io/aprovacao360/`
    - **Redirect URLs** → **Add URL:** `https://chatgptceccontabil-png.github.io/aprovacao360/`
-   - **Save**.
+   - **Save**. É isso que faz o link de "Esqueci a senha" voltar para o site.
+4. Abra o site → **Primeiro acesso? Criar minha conta** → seu e-mail e uma senha de 8 caracteres ou mais → **Criar minha conta**.
+5. **Depois de criar a sua conta**, feche a porta para outras pessoas:
+   Supabase → **Authentication** → **Sign In / Providers** → desligue **"Allow new users to sign up"** → **Save**.
+   🔒 A partir daí, **só você** entra na plataforma.
+
+> **Esqueci a senha:** funciona para o e-mail dono da conta do Supabase. Se você usar outro e-mail no site e precisar recuperar a senha, me avise que eu explico como configurar um e-mail próprio (gratuito, pelo Gmail).
+
+> **Login com Google (opcional, futuro):** dá para ativar depois, sem perder nada. Os passos ficam no histórico deste guia.
 
 ---
 
@@ -84,16 +73,17 @@ Ordem: **A** Supabase → **B** GitHub Pages → **C** Google (login) → **D** 
 ## F. Testar (2 min)
 
 1. Abra **https://chatgptceccontabil-png.github.io/aprovacao360/** (no computador e no celular).
-2. Clique em **Entrar com Google** e autorize.
-3. **Esperado:** aparece o cabeçalho azul-marinho com o seu nome e foto, o menu e a mensagem "Tudo pronto para começar".
+2. Crie a conta (C.4) ou entre com e-mail e senha.
+3. **Esperado:** aparece o cabeçalho azul-marinho com o seu e-mail, o menu e a mensagem "Tudo pronto para começar".
 4. No Supabase → **Table Editor** → `a360_configuracoes`: deve haver **1 linha** com o seu `usuario_id`.
 
 ### Se der erro
 
 | Mensagem | Causa provável | Solução |
 |---|---|---|
-| "Falta conectar o banco de dados" | `config.js` ainda com `COLE_AQUI` | Passo E |
-| Google: "redirect_uri_mismatch" | Callback URL diferente no Google | Copie de novo a do Supabase (D.1) para o Google (C.6) |
-| Google: "Acesso bloqueado / app em teste" | Seu e-mail não está em Usuários de teste | Passo C.4 |
-| Volta para a tela de login depois de autorizar | Redirect URL não cadastrada | Passo D.2 |
+| "Falta conectar o banco de dados" | Página antiga guardada no navegador | Ctrl + Shift + R ou janela anônima |
+| "Não consegui carregar a conexão com o banco" | Bloqueador de anúncios ou rede da empresa | Liberar `cdn.jsdelivr.net` ou testar no 4G |
+| "Confirme seu e-mail…" | "Confirm email" ainda ligado | Passo C.2, ou clique no link do e-mail |
+| "Novos cadastros estão desativados" | Você já desligou o cadastro antes de criar a conta | Religue C.5, crie a conta e desligue de novo |
+| Erro sobre `a360_configuracoes` | O script do banco não foi rodado | Parte A, passos 3 a 5 |
 | "Não consegui falar com o banco" | Projeto pausado após 7 dias sem uso | Supabase → projeto → **Restore** |
