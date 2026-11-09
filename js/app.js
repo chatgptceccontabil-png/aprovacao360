@@ -44,7 +44,14 @@
   }
 
   function iniciar() {
-    if (!configurado() || !window.supabase) { mostrar('tela-config'); return; }
+    if (!configurado()) { mostrar('tela-config'); return; }
+    if (!window.supabase) {
+      // RN28: biblioteca do Supabase não carregou (internet, bloqueador de anúncios ou rede da empresa)
+      document.querySelector('#tela-config .cartao-login').innerHTML =
+        '<h1>Aprovação 360°</h1><p><strong>Não consegui carregar a conexão com o banco.</strong></p>' +
+        '<p class="suave">Verifique a internet. Se usa bloqueador de anúncios ou rede da empresa, libere o site <code>cdn.jsdelivr.net</code> e recarregue a página.</p>';
+      mostrar('tela-config'); return;
+    }
     sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     });
