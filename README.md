@@ -15,13 +15,15 @@ Plataforma pessoal de estudos para concursos em que **a IA (Claude ou ChatGPT) �
 | `js/config.js` | Endereço e chave pública do Supabase (preencher) |
 | `js/app.js` | Lógica da aplicação |
 | `supabase/schema.sql` | Script do banco (rodar no SQL Editor do Supabase) |
+| `supabase/02-importar-edital.sql` | Função de importação do EDITAL (rodar depois do schema) |
+| `testes/` | Testes automáticos (`node testes/edital.test.js`) |
 | `docs/` | Guias |
 
 ## Andamento da construção
 
 - [x] **Etapa 1:** banco de dados (13 tabelas, segurança por usuário) + login com e-mail e senha + navegação
-- [ ] Etapa 2: concursos e configurações
-- [ ] Etapa 3: importar EDITAL + edital verticalizado
+- [x] Etapa 2: concursos e configurações
+- [x] Etapa 3: importar EDITAL + edital verticalizado (rodar `supabase/02-importar-edital.sql`)
 - [ ] Etapa 4: importar CHECKPOINT + motor de revisões
 - [ ] Etapa 5: painel Hoje + Prompt do Dia (Claude e ChatGPT)
 - [ ] Etapa 6: erros, ciclo e simulados

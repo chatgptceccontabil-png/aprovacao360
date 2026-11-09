@@ -7,16 +7,10 @@
   var cfg = window.A360_CONFIG || {};
   var $ = function (id) { return document.getElementById(id); };
   var sb = null;
-  var estado = { usuario: null, config: null, concursos: [] };
+  var estado = { usuario: null, config: null, concursos: [], ativoId: null };
   var falhasConexao = 0;
 
   // ---------- utilitários ----------
-  // RN26: "hoje" sempre na data local de São Paulo, gravado em ISO
-  function hojeISO() {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-  }
-  function dataBR(iso) { if (!iso) return '—'; var p = iso.slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
-
   var avisoTimer = null;
   function aviso(texto) {
     var el = $('aviso'); el.textContent = texto; el.hidden = false;
@@ -171,8 +165,8 @@
         return r2.data;
       });
     }).then(function (config) {
-      estado.config = config;
-      return sb.from('a360_concursos').select('id,codigo,cargo,orgao,data_prova,prioritario').is('excluido_em', null).order('codigo');
+      estado.config = config || {};
+      return sb.from('a360_concursos').select('*').is('excluido_em', null).order('codigo');
     }).then(function (r) {
       registrarResultado(r.error);
       estado.concursos = (r && r.data) || [];
@@ -184,35 +178,54 @@
     var sel = $('sel-concurso');
     sel.innerHTML = '';
     if (!estado.concursos.length) {
-      var o = document.createElement('option'); o.textContent = 'Nenhum concurso ainda'; o.value = ''; sel.appendChild(o); sel.disabled = true; return;
+      estado.ativoId = null;
+      sel.appendChild(A360U.h('option', { value: '' }, 'Nenhum concurso ainda')); sel.disabled = true; return;
     }
     sel.disabled = false;
     estado.concursos.forEach(function (c) {
-      var o = document.createElement('option'); o.value = c.id; o.textContent = c.codigo + ' · ' + c.cargo; sel.appendChild(o);
+      sel.appendChild(A360U.h('option', { value: c.id }, (c.prioritario ? '★ ' : '') + c.codigo + ' · ' + c.cargo));
     });
     var ativo = estado.config && estado.config.concurso_ativo_id;
     if (!ativo || !estado.concursos.some(function (c) { return c.id === ativo; })) {
       var prio = estado.concursos.filter(function (c) { return c.prioritario; })[0];
       ativo = (prio || estado.concursos[0]).id;
     }
+    estado.ativoId = ativo;
     sel.value = ativo;
   }
 
-  function trocarConcurso() {
-    var id = $('sel-concurso').value || null;
-    sb.from('a360_configuracoes').update({ concurso_ativo_id: id }).eq('usuario_id', estado.usuario.id).then(function (r) {
+  function definirAtivo(id) {
+    return sb.from('a360_configuracoes').update({ concurso_ativo_id: id }).eq('usuario_id', estado.usuario.id).then(function (r) {
       registrarResultado(r.error);
-      if (r.error) { aviso('Não consegui trocar o concurso: ' + r.error.message); return; }
-      if (estado.config) estado.config.concurso_ativo_id = id;
-      rotear();
+      if (r.error) { aviso('Não consegui trocar o concurso: ' + r.error.message); return false; }
+      estado.config.concurso_ativo_id = id; estado.ativoId = id; $('sel-concurso').value = id || '';
+      return true;
     });
   }
+
+  function trocarConcurso() { definirAtivo($('sel-concurso').value || null).then(rotear); }
+
+  // ---------- contexto entregue às telas ----------
+  var ctx = {
+    get sb() { return sb; },
+    estado: estado,
+    aviso: aviso,
+    registrar: registrarResultado,
+    ativo: function () { return estado.concursos.filter(function (c) { return c.id === estado.ativoId; })[0] || null; },
+    definirAtivo: definirAtivo,
+    recarregar: function () { return carregarBase().then(rotear); },
+    rotear: function () { rotear(); },
+    ir: function (tela) { if (window.location.hash === '#/' + tela) rotear(); else window.location.hash = '#/' + tela; },
+    confirmar: function (texto) { return window.confirm(texto); }
+  };
 
   // ---------- navegação ----------
   var TITULOS = {
     hoje: 'Hoje', importar: 'Importar', edital: 'Edital verticalizado', revisoes: 'Revisões', erros: 'Caderno de erros',
     ciclo: 'Ciclo de estudos', simulados: 'Simulados', biblioteca: 'Biblioteca', concursos: 'Concursos', configuracoes: 'Configurações e backup'
   };
+  var ETAPA = { revisoes: 4, erros: 6, ciclo: 6, simulados: 6, biblioteca: 7 };
+  var geracao = 0;
 
   function rotear() {
     if (!estado.usuario) return;
@@ -224,16 +237,21 @@
       if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     var main = $('conteudo');
+    var minha = ++geracao;
     main.innerHTML = '';
-    var h1 = document.createElement('h1'); h1.textContent = TITULOS[tela];
-    main.appendChild(h1);
-    var cartao = document.createElement('div'); cartao.className = 'cartao vazio';
-    if (tela === 'hoje' && !estado.concursos.length) {
-      cartao.innerHTML = '<p><strong>Tudo pronto para começar.</strong></p><p>Login e banco de dados funcionando. Hoje é ' + dataBR(hojeISO()) + '.</p><p>As próximas etapas vão trazer a importação do EDITAL e do CHECKPOINT.</p>';
-    } else {
-      cartao.innerHTML = '<p>Esta tela chega nas próximas etapas da construção.</p>';
+    var fn = window.A360T && window.A360T[tela];
+    if (!fn) {
+      main.appendChild(A360U.h('h1', null, TITULOS[tela]));
+      main.appendChild(A360U.h('div', { class: 'cartao vazio' }, A360U.h('p', null, 'Esta tela chega na etapa ' + (ETAPA[tela] || '') + ' da construção.')));
+      main.focus(); return;
     }
-    main.appendChild(cartao);
+    // cada tela desenha num contêiner; se o usuário trocar de tela no meio do carregamento, o resultado antigo é descartado
+    var caixa = A360U.h('div');
+    main.appendChild(caixa);
+    Promise.resolve(fn(ctx, caixa, function () { return minha === geracao; })).catch(function (e) {
+      registrarResultado(e);
+      caixa.appendChild(A360U.h('div', { class: 'cartao erro-caixa' }, 'Algo deu errado: ' + ((e && e.message) || e)));
+    });
     main.focus();
   }
 

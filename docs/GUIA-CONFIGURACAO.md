@@ -19,8 +19,9 @@ Ordem: **A** Supabase → **B** GitHub Pages → **C** login com e-mail e senha 
    - Se aparecer aviso de limite de projetos gratuitos (o plano gratuito permite 2), me avise.
 3. No menu da esquerda, abra **SQL Editor** → **New query**.
 4. Abra o arquivo `supabase/schema.sql` deste repositório (no GitHub, clique no arquivo e depois no botão **Copy raw file**), **cole** no editor e clique em **Run**.
-5. **Resultado esperado:** uma tabela com **13 linhas** (`a360_assuntos` … `a360_simulados`), todas com `rls = true`. Os avisos amarelos ("already exists, skipping") são normais.
-6. Pegue as chaves: **Project Settings** (engrenagem) → **API** / **API Keys**:
+5. Repita os passos 3 e 4 com o arquivo `supabase/02-importar-edital.sql` (resultado: "a360_importar_edital instalada").
+6. **Resultado esperado do primeiro script:** uma tabela com **13 linhas** (`a360_assuntos` … `a360_simulados`), todas com `rls = true`. Os avisos amarelos ("already exists, skipping") são normais.
+7. Pegue as chaves: **Project Settings** (engrenagem) → **API** / **API Keys**:
    - **Project URL** (algo como `https://abcdxyz.supabase.co`)
    - a chave **anon public** ou **Publishable key** (começa com `eyJ…` ou `sb_publishable_…`)
 
