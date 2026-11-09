@@ -184,6 +184,11 @@
         return;
       }
       var hoje = U.hojeISO(), lista = r.data || [];
+      if (lista.some(function (x) { return x.data_prevista <= hoje; })) {
+        area.appendChild(h('div', { class: 'barra-acoes' }, h('button', { class: 'btn btn-primario', onclick: function () {
+          A360PR.gerar(ctx, 'revisao').then(function (t) { A360PR.verPrompt(ctx, t, null, 'Prompt: revisões de hoje'); }).catch(function (e) { ctx.aviso(UI.erroBanco(e)); });
+        } }, 'Revisar as de hoje na IA (Claude ou ChatGPT)')));
+      }
       if (!lista.length) { area.appendChild(UI.vazio('Nenhuma revisão pendente. 🎉', 'As revisões aparecem sozinhas depois que você importa um CHECKPOINT com uma aula.')); return; }
       var grupos = [
         { t: 'Atrasadas', cls: 'erro', f: function (x) { return x.data_prevista < hoje; } },

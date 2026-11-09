@@ -30,6 +30,8 @@
     });
   }
 
+  window.A360D = { carregarEdital: carregarEdital };
+
   // ------------------------------------------------------------------
   // IMPORTAR
   // ------------------------------------------------------------------
@@ -128,9 +130,9 @@
   A360T.edital = function (ctx, el, vivo) {
     var c = ctx.ativo();
     el.appendChild(h('div', { class: 'titulo-acoes' }, h('h1', null, 'Edital verticalizado'),
-      c ? h('div', { class: 'barra-acoes' }, h('button', { class: 'btn btn-secundario', onclick: function () { formDisciplina(ctx, c, null); } }, '+ Disciplina'), h('a', { class: 'btn btn-primario', href: '#/importar' }, 'Importar EDITAL')) : null));
+      c ? h('div', { class: 'barra-acoes' }, h('button', { class: 'btn btn-secundario', onclick: function () { formDisciplina(ctx, c, null); } }, '+ Disciplina'), h('a', { class: 'btn btn-primario', href: '#/importar?aba=edital' }, 'Importar EDITAL')) : null));
     if (!c) {
-      el.appendChild(UI.vazio('Nenhum edital ainda.', 'No Claude ou no ChatGPT, use /edital e cole aqui o bloco EDITAL.', [h('a', { class: 'btn btn-primario', href: '#/importar' }, 'Importar EDITAL')]));
+      el.appendChild(UI.vazio('Nenhum edital ainda.', 'No Claude ou no ChatGPT, use /edital e cole aqui o bloco EDITAL.', [h('a', { class: 'btn btn-primario', href: '#/importar?aba=edital' }, 'Importar EDITAL')]));
       return;
     }
     var area = h('div', null, h('p', { class: 'suave' }, 'Carregando…'));
@@ -139,7 +141,7 @@
       if (!vivo()) return;
       area.innerHTML = '';
       if (!discs.length) {
-        area.appendChild(UI.vazio('Este concurso ainda não tem disciplinas.', 'Importe o bloco EDITAL ou inclua as disciplinas à mão.', [h('a', { class: 'btn btn-primario', href: '#/importar' }, 'Importar EDITAL'), h('button', { class: 'btn btn-secundario', onclick: function () { formDisciplina(ctx, c, null); } }, '+ Disciplina')]));
+        area.appendChild(UI.vazio('Este concurso ainda não tem disciplinas.', 'Importe o bloco EDITAL ou inclua as disciplinas à mão.', [h('a', { class: 'btn btn-primario', href: '#/importar?aba=edital' }, 'Importar EDITAL'), h('button', { class: 'btn btn-secundario', onclick: function () { formDisciplina(ctx, c, null); } }, '+ Disciplina')]));
         return;
       }
       var total = 0, cob = 0, dom = 0;
@@ -204,6 +206,9 @@
         h('span', { class: 'pequeno suave col-q' }, a.stats && a.stats.feitas ? a.stats.feitas + ' q · ' + U.pct(a.stats.acertos, a.stats.feitas) : 'sem questões'),
         h('span', { class: 'pequeno suave col-ativ' }, a.stats && a.stats.proxima_revisao ? 'revisão ' + U.dataBR(a.stats.proxima_revisao).slice(0, 5) : (a.ultima_atividade ? 'última atividade ' + U.dataBR(a.ultima_atividade) : 'sem atividade')),
         h('span', { class: 'acoes-linha' },
+          h('button', { class: 'btn btn-secundario btn-peq', onclick: function () {
+            A360PR.gerar(ctx, 'assunto', a.id).then(function (t) { A360PR.verPrompt(ctx, t, null, 'Prompt: estudar ' + a.descricao); }).catch(function (e) { ctx.aviso(UI.erroBanco(e)); });
+          } }, 'Estudar'),
           h('button', { class: 'btn-link', onclick: function () { formAssunto(ctx, d, a); } }, 'Editar'),
           h('button', { class: 'btn-link perigo', onclick: function () { excluirAssunto(ctx, a); } }, 'Excluir'))));
     });

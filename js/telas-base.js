@@ -30,40 +30,6 @@
   }
 
   // ------------------------------------------------------------------
-  // HOJE (versão provisória; o painel completo chega na etapa 5)
-  // ------------------------------------------------------------------
-  A360T.hoje = function (ctx, el, vivo) {
-    el.appendChild(h('h1', null, 'Hoje · ' + U.dataBR(U.hojeISO())));
-    var c = ctx.ativo();
-    if (!c) {
-      el.appendChild(UI.vazio('Comece pelo seu concurso.',
-        'No Claude ou no ChatGPT, envie o edital e use o comando /edital. Depois cole aqui o bloco EDITAL gerado. Se preferir, cadastre o concurso à mão.',
-        [h('a', { class: 'btn btn-primario', href: '#/importar' }, 'Importar EDITAL'), h('a', { class: 'btn btn-secundario', href: '#/concursos' }, 'Novo concurso')]));
-      return;
-    }
-    return progressoPorConcurso(ctx.sb).then(function (mapa) {
-      if (!vivo()) return;
-      var p = mapa[c.id] || { total: 0, coberto: 0, dominado: 0 };
-      var cob = p.total ? Math.round(p.coberto / p.total * 100) : 0;
-      el.appendChild(h('div', { class: 'grade-indicadores' },
-        indicador('Dias até a prova', c.data_prova ? String(Math.max(0, U.difDias(c.data_prova, U.hojeISO()))) : '—', c.data_prova ? 'prova em ' + U.dataBR(c.data_prova) : 'data não definida'),
-        indicador('Edital coberto', p.total ? cob + '%' : '—', p.dominado + ' de ' + p.total + ' assuntos dominados'),
-        indicador('Assuntos no edital', String(p.total), p.total ? 'veja em Edital' : 'importe o EDITAL')
-      ));
-      el.appendChild(h('div', { class: 'cartao' },
-        h('h2', null, c.codigo),
-        h('p', null, c.cargo + ' · ' + c.orgao + (c.banca ? ' · banca ' + c.banca : '')),
-        h('div', { class: 'barra-acoes' },
-          h('a', { class: 'btn btn-primario', href: '#/edital' }, 'Ver edital verticalizado'),
-          h('a', { class: 'btn btn-secundario', href: '#/importar' }, 'Importar')),
-        h('p', { class: 'suave pequeno' }, 'O painel completo (botões Estudar no Claude e no ChatGPT, revisões do dia e acerto por disciplina) chega na etapa 5.')));
-    });
-  };
-  function indicador(rot, valor, sub) {
-    return h('div', { class: 'indicador' }, h('div', { class: 'ind-rotulo' }, rot), h('div', { class: 'ind-valor' }, valor), h('div', { class: 'ind-sub' }, sub));
-  }
-
-  // ------------------------------------------------------------------
   // CONCURSOS
   // ------------------------------------------------------------------
   A360T.concursos = function (ctx, el, vivo) {

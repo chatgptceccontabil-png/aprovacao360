@@ -216,6 +216,7 @@
     recarregar: function () { return carregarBase().then(rotear); },
     rotear: function () { rotear(); },
     ir: function (tela) { if (window.location.hash === '#/' + tela) rotear(); else window.location.hash = '#/' + tela; },
+    sequencia: function (n) { var el = $('seq'); if (el) { el.textContent = 'Sequência: ' + n + ' dia' + (n === 1 ? '' : 's'); el.hidden = false; } },
     confirmar: function (texto) { return window.confirm(texto); }
   };
 
@@ -229,7 +230,7 @@
 
   function rotear() {
     if (!estado.usuario) return;
-    var tela = (window.location.hash.replace(/^#\/?/, '') || 'hoje').split('/')[0];
+    var tela = (window.location.hash.replace(/^#\/?/, '') || 'hoje').split(/[\/?]/)[0];
     if (!TITULOS[tela]) tela = 'hoje';
     document.querySelectorAll('.menu a').forEach(function (a) {
       var on = a.getAttribute('data-tela') === tela;

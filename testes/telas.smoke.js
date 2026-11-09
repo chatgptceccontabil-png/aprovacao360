@@ -3,7 +3,7 @@ const { JSDOM } = require('jsdom');
 const fs = require('fs'), path = require('path'), R = path.join(__dirname, '..') + '/';
 const html = fs.readFileSync(R + 'index.html', 'utf8').replace(/<script src="https:[^"]+"><\/script>/, '').replace(/<script src="([^"]+)"><\/script>/g, '');
 const dom = new JSDOM(html, { url: 'https://x.github.io/aprovacao360/', runScripts: 'outside-only', pretendToBeVisual: true });
-const w = dom.window; w.confirm = () => true; w.console = console;
+const w = dom.window; w.confirm = () => true; w.console = console; const abertos = []; w.open = u => { abertos.push(u); return null; }; w.document.execCommand = () => true;
 // ---- banco falso ----
 const DB = {}; let seq = 0; const UID = 'u1';
 const T = n => (DB[n] = DB[n] || []);
@@ -16,6 +16,7 @@ function q(tabela) {
     eq(k, v) { filtros.push(r => r[k] === v); return api; },
     is(k, v) { filtros.push(r => (r[k] ?? null) === v); return api; },
     in(k, vs) { filtros.push(r => vs.includes(r[k])); return api; },
+    gte(k, v) { filtros.push(r => (r[k] || '') >= v); return api; },
     order() { return api; }, limit() { return api; },
     single() { one = true; return api; }, maybeSingle() { maybe = true; return api; },
     then(res, rej) {
@@ -43,12 +44,12 @@ function rpc(nome, args) {
   if (nome==='a360_registrar_revisao') return Promise.resolve({data:regRev(args.p_assunto,args.p_resultado,args.p_data),error:null});
   if (nome==='a360_importar_checkpoint') { const d=args.dados;
     if (T('a360_checkpoints').some(c=>c.hash===d.hash)) return Promise.resolve({data:null,error:{message:'CHECKPOINT_DUPLICADO 09/11/2026'}});
-    T('a360_checkpoints').push({id:'id'+(++seq),hash:d.hash,criado_em:'2026-11-09T10:00:00Z',excluido_em:null}); const map={}; const msgs=[];
+    T('a360_checkpoints').push({id:'id'+(++seq),hash:d.hash,concurso_id:d.concurso_id,data_referencia:d.data,proxima:d.proxima,propostas:d.propostas,correcoes:d.correcoes,propostas_vistas:false,criado_em:'2026-11-09T10:00:00Z',excluido_em:null}); const map={}; const msgs=[];
     d.novos_assuntos.forEach(n=>{const r={id:'id'+(++seq),disciplina_id:n.disciplina_id,descricao:n.descricao,status:'nao_iniciado',ordem:99,excluido_em:null};T('a360_assuntos').push(r);map[n.chave]=r.id;});
     const A=x=>x.assunto_id||map[x.assunto_chave]||null;
-    d.sessoes.forEach(x=>{const a=A(x);T('a360_sessoes').push({...x,assunto_id:a,data:d.data}); if(a&&x.status==='REALIZADO'&&!T('a360_revisoes').some(r=>r.assunto_id===a)){T('a360_revisoes').push({id:'id'+(++seq),assunto_id:a,etapa:1,data_prevista:addD(d.data,1),data_estudo_original:d.data,status:'pendente',excluido_em:null});msgs.push('1ª revisão');} const as=T('a360_assuntos').find(z=>z.id===a); if(as) as.status='em_estudo';});
-    d.questoes.forEach(x=>T('a360_questoes').push({...x,assunto_id:A(x),data:d.data}));
-    d.erros.forEach(x=>T('a360_erros').push({...x,assunto_id:A(x)}));
+    d.sessoes.forEach(x=>{const a=A(x);T('a360_sessoes').push({...x,assunto_id:a,data:d.data,concurso_id:d.concurso_id,excluido_em:null}); if(a&&x.status==='REALIZADO'&&!T('a360_revisoes').some(r=>r.assunto_id===a)){T('a360_revisoes').push({id:'id'+(++seq),assunto_id:a,etapa:1,data_prevista:addD(d.data,1),data_estudo_original:d.data,status:'pendente',excluido_em:null});msgs.push('1ª revisão');} const as=T('a360_assuntos').find(z=>z.id===a); if(as) as.status='em_estudo';});
+    d.questoes.forEach(x=>T('a360_questoes').push({...x,assunto_id:A(x),data:d.data,excluido_em:null}));
+    d.erros.forEach(x=>T('a360_erros').push({...x,assunto_id:A(x),data:d.data,revisado:false,excluido_em:null}));
     d.revisoes.forEach(x=>{regRev(A(x),x.resultado,d.data);msgs.push('rev');});
     return Promise.resolve({data:{data:d.data,sessoes:d.sessoes.length,questoes:d.questoes.length,questoes_feitas:d.questoes.reduce((s,x)=>s+x.feitas,0),erros:d.erros.length,revisoes:d.revisoes.length,assuntos_novos:d.novos_assuntos.length,mensagens:msgs},error:null}); }
   const dados = args.dados;
@@ -64,7 +65,7 @@ w.supabase = { createClient: () => ({ from: q, rpc, auth: {
   onAuthStateChange(cb) { setTimeout(() => cb('SIGNED_IN', { user: { id: UID, email: 'eu@x.com', user_metadata: {} } }), 0); },
   getSession: () => Promise.resolve({ data: { session: { user: { id: UID } } }, error: null }), signOut: () => Promise.resolve({}) } }) };
 w.A360_CONFIG = { SUPABASE_URL: 'https://a.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_x' };
-['js/util.js','js/parsers.js','js/ui.js','js/telas-base.js','js/telas-edital.js','js/telas-checkpoint.js','js/app.js'].forEach(f => w.eval(fs.readFileSync(R + f, 'utf8')));
+['js/util.js','js/parsers.js','js/calc.js','js/ui.js','js/telas-base.js','js/telas-edital.js','js/telas-checkpoint.js','js/telas-hoje.js','js/app.js'].forEach(f => w.eval(fs.readFileSync(R + f, 'utf8')));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const $ = s => w.document.querySelector(s), txt = () => w.document.getElementById('conteudo').textContent.replace(/\s+/g, ' ');
 const go = async h => { w.location.hash = h; await sleep(60); };
@@ -120,6 +121,8 @@ QUESTOES | Direito Tributário | Lancamento | 10 | 7
 ERRO | Direito Tributário | Lançamento por homologação | pegadinha | quem antecipa é o sujeito passivo
 REVISAO | Português | Crase | 90
 QUESTOES | Direito Tributário | Lançamento | 3 | 9
+PROPOSTA | aumentar Português para 4 h
+PROXIMA | /aula Direito Tributário > Competência tributária
 === FIM ===`;
   await go('#/importar');
   console.log('16 aba padrão checkpoint:', !!$('#txt-checkpoint'));
@@ -137,5 +140,21 @@ QUESTOES | Direito Tributário | Lançamento | 3 | 9
   console.log('22 registrar:', T('a360_revisoes').some(r=>r.status==='concluida'&&r.resultado===90&&r.etapa===1), T('a360_revisoes').some(r=>r.status==='pendente'&&r.etapa===7));
   await go('#/edital'); await sleep(50);
   console.log('23 edital stats:', /10 q · 70%/.test(txt()), /revisão/.test(txt()));
+  // ---- etapa 5 ----
+  await go('#/hoje'); await sleep(80);
+  console.log('24 hoje:', /Sua próxima sessão/.test(txt()), /Estudar no Claude/.test(txt()), /Estudar no ChatGPT/.test(txt()), /Acerto \(30 dias\)/.test(txt()));
+  console.log('25 sequência no topo:', $('#seq').textContent, '| alerta proposta:', /Proposta aguardando/.test(txt()), '| próxima:', /Competência tributária/.test(txt()));
+  click(btn('Estudar no Claude')); await sleep(20);
+  console.log('26 abriu:', abertos[0], '| aviso:', $('#aviso').textContent);
+  click(btn('Estudar no ChatGPT')); await sleep(20); console.log('27 abriu:', abertos[1]);
+  click(btn('Ver prompt')); await sleep(20);
+  const pa = w.document.querySelector('.prompt-area');
+  console.log('28 prompt:', pa && pa.value.split('\n')[0]);
+  w.document.querySelector('.painel-fundo').remove();
+  click(btn('Marcar como vista')); await sleep(60); console.log('29 proposta vista:', !/Proposta aguardando/.test(txt()));
+  await go('#/edital'); await sleep(60); click(btn('Estudar')); await sleep(80);
+  const pa2 = w.document.querySelectorAll('.prompt-area'); console.log('30 prompt assunto:', /escolhido por mim/.test(pa2[pa2.length-1].value));
+  w.document.querySelectorAll('.painel-fundo').forEach(x=>x.remove());
+  await go('#/importar?aba=edital'); console.log('31 rota com parâmetro:', !!$('#txt-edital'));
   process.exit(0);
 })().catch(e => { console.error('FALHOU', e); process.exit(1); });
