@@ -249,6 +249,24 @@ h3 { font-size: 15px; color: var(--marinho); margin: 16px 0 8px; }
 .ts-linha.cab { font-weight: 600; color: var(--texto-suave); font-size: 13px; }
 .ts-linha input { font: inherit; padding: 8px; border: 1px solid var(--prata); border-radius: var(--raio); width: 100%; min-height: 40px; }
 
+/* Cronômetro */
+.cron { display: flex; align-items: center; }
+.btn-cron { font: inherit; font-size: 13px; font-weight: 600; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); border-radius: 999px; padding: 6px 14px; min-height: 36px; cursor: pointer; }
+.cron-pilula { display: inline-flex; align-items: center; gap: 8px; background: var(--primaria); color: #fff; border-radius: 999px; padding: 4px 6px 4px 14px; font-size: 13px; font-weight: 600; }
+.cron-pilula.pausado { background: var(--alerta); }
+.cron-tempo { font-variant-numeric: tabular-nums; font-size: 15px; }
+.cron-disc { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; opacity: .95; }
+.cron-bt { background: rgba(255,255,255,.2); color: #fff; border: 0; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 12px; }
+.cron-bt:hover { background: rgba(255,255,255,.35); }
+
+/* Biblioteca */
+.cartao-link { display: flex; flex-direction: column; gap: 6px; }
+.link-titulo { font-weight: 600; font-size: 16px; }
+.quebra { word-break: break-all; }
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+
+.aviso-linha { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+
 /* Painel lateral */
 .painel-fundo { position: fixed; inset: 0; background: rgba(27,47,72,.45); z-index: 40; display: flex; justify-content: flex-end; }
 .painel { background: #fff; width: 100%; max-width: 560px; height: 100%; display: flex; flex-direction: column; box-shadow: -8px 0 32px rgba(0,0,0,.15); }
@@ -275,4 +293,5 @@ h3 { font-size: 15px; color: var(--marinho); margin: 16px 0 8px; }
   .menu { max-width: none; flex-direction: row; overflow-x: auto; flex-basis: 100%; }
   .menu a { white-space: nowrap; }
   .usuario span { display: none; }
+  .cron-disc { display: none; }
 }

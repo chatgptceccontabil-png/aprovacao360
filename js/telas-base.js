@@ -190,8 +190,50 @@
         botaoCopiar('Copiar núcleo do ChatGPT', 'docs/ia/nucleo-chatgpt.md'),
         h('a', { class: 'btn btn-secundario', href: 'docs/ia/manual-aprovacao-360.md', download: 'manual-aprovacao-360.md' }, 'Baixar manual (ChatGPT)'),
         h('a', { class: 'btn btn-secundario', href: 'docs/ia/registro-mestre.md', download: 'registro-mestre.md' }, 'Baixar Registro Mestre em branco'))));
-    el.appendChild(h('div', { class: 'cartao' }, h('h2', null, 'Backup e exportações'),
-      h('p', { class: 'suave' }, 'Exportar o Registro Mestre preenchido, baixar e restaurar o backup e exportar o caderno de erros chegam na etapa 8.'),
-      h('p', { class: 'pequeno suave' }, 'Conta: ' + (ctx.estado.usuario.email || ''))));
+    // Etapa 8: Registro Mestre, backup e restauração
+    var bReg = h('button', { class: 'btn btn-primario' }, 'Exportar Registro Mestre (.md)');
+    bReg.addEventListener('click', function () {
+      bReg.disabled = true;
+      A360EXP.registroMestre(ctx).then(function () { bReg.disabled = false; ctx.aviso('Registro Mestre baixado. Suba-o nos arquivos do Projeto no Claude e no ChatGPT (substitua o anterior).'); },
+        function (e) { bReg.disabled = false; ctx.aviso(UI.erroBanco(e)); });
+    });
+    var bBak = h('button', { class: 'btn btn-secundario' }, 'Baixar backup (.json)');
+    bBak.addEventListener('click', function () {
+      bBak.disabled = true;
+      A360EXP.backup(ctx).then(function () { bBak.disabled = false; ctx.aviso('Backup baixado.'); ctx.rotear(); }, function (e) { bBak.disabled = false; ctx.aviso(UI.erroBanco(e)); });
+    });
+    var arq = h('input', { type: 'file', accept: '.json,application/json', 'aria-label': 'Arquivo de backup', class: 'sr' });
+    var bRes = h('button', { class: 'btn btn-secundario', onclick: function () { arq.click(); } }, 'Restaurar backup…');
+    arq.addEventListener('change', function () {
+      var f = arq.files && arq.files[0]; if (!f) return;
+      var leitor = new FileReader();
+      leitor.onload = function () {
+        var obj; try { obj = JSON.parse(leitor.result); } catch (e) { obj = null; }
+        var erro = A360EXP.validarBackup(obj);
+        arq.value = '';
+        if (erro) { ctx.aviso(erro); return; }
+        var tab = h('div', null, A360EXP.resumoBackup(obj).map(function (x) { return h('div', { class: 'linha-simples' }, h('span', null, x[0]), h('strong', null, String(x[1]))); }));
+        var conf = h('button', { class: 'btn btn-perigo' }, 'Restaurar por cima');
+        var p = UI.painel('Restaurar backup', h('div', null,
+          h('p', null, 'Backup de ' + U.dataBR(String(obj.exportado_em).slice(0, 10)) + '. Os registros com o mesmo identificador serão substituídos pelos do arquivo; os que não estão no arquivo continuam como estão.'), tab), [conf]);
+        conf.addEventListener('click', function () {
+          if (!ctx.confirmar('Confirmar a restauração? Recomendo baixar um backup do estado atual antes.')) return;
+          conf.disabled = true;
+          A360EXP.restaurar(ctx, obj).then(function (r) {
+            p.fechar();
+            ctx.aviso(r.problemas.length ? 'Restaurado com avisos (' + r.total + ' registros). ' + r.problemas.slice(0, 2).join(' · ') : 'Backup restaurado: ' + r.total + ' registros.');
+            ctx.recarregar();
+          }, function (e) { conf.disabled = false; ctx.aviso(UI.erroBanco(e)); });
+        });
+      };
+      leitor.readAsText(f);
+    });
+    var ub = c.ultimo_backup ? U.dataBR(String(c.ultimo_backup).slice(0, 10)) : 'nunca';
+    var ur = c.ultimo_registro_exportado ? U.dataBR(String(c.ultimo_registro_exportado).slice(0, 10)) : 'nunca';
+    el.appendChild(h('div', { class: 'cartao' }, h('h2', null, 'Registro Mestre, backup e exportações'),
+      h('p', { class: 'suave' }, 'O Registro Mestre leva o seu estado atual para a IA: exporte depois de importar CHECKPOINTs e suba nos dois Projetos. O backup guarda tudo (faça toda semana); o banco gratuito não faz backup sozinho.'),
+      h('div', { class: 'barra-acoes' }, bReg, bBak, bRes, arq),
+      h('p', { class: 'pequeno suave' }, 'Último Registro Mestre: ' + ur + ' · último backup: ' + ub + ' · conta: ' + (ctx.estado.usuario.email || '')),
+      h('p', { class: 'pequeno suave' }, 'O caderno de erros em CSV (Excel) fica na tela Erros.')));
   };
 })();

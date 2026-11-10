@@ -72,12 +72,19 @@
     function seguir(lido, c) {
       analisar.disabled = true;
       var hashP = sha256(P.textoParaHash(lido.original));
-      Promise.all([carregarDiscs(ctx.sb, c.id), hashP]).then(function (res) {
-        var discs = res[0], hash = res[1];
+      Promise.all([carregarDiscs(ctx.sb, c.id), hashP, A360CRON.sessoesDoDia(ctx.sb, c.id, lido.cab.data)]).then(function (res) {
+        var discs = res[0], hash = res[1], crons = res[2];
         return ctx.sb.from('a360_checkpoints').select('criado_em').eq('hash', hash).is('excluido_em', null).limit(1).then(function (r) {
           analisar.disabled = false;
           if (r.data && r.data.length) { erro('Este checkpoint já foi importado em ' + U.dataBR(String(r.data[0].criado_em).slice(0, 10)) + '. Nada foi gravado de novo.'); return; }
           P.resolverCheckpoint(lido, discs);
+          // RN18: tempo do cronômetro já registrado para o mesmo assunto no mesmo dia
+          lido.linhas.forEach(function (l) {
+            if (l.tipo !== 'SESSAO' || l.status === 'erro' || !l.disc || !l.valor || !l.valor.minutos) return;
+            var aid = l.assuntoRef ? l.assuntoRef.id : null;
+            var mesmos = crons.filter(function (x) { return x.disciplina_id === l.disc.id && (x.assunto_id || null) === aid; });
+            if (mesmos.length) l.cron = { minutos: mesmos.reduce(function (a, x) { return a + x.minutos; }, 0), ids: mesmos.map(function (x) { return x.id; }) };
+          });
           previa(ctx, prev, lido, c, hash, function () { txt.value = ''; });
         });
       }).catch(function (e) { analisar.disabled = false; erro(UI.erroBanco(e)); });
@@ -85,7 +92,7 @@
   };
 
   function previa(ctx, el, lido, c, hash, aoConcluir) {
-    var decisoes = {};
+    var decisoes = {}, decMin = {};
     var cab = lido.cab;
     var iaTxt = cab.ia ? ({ claude: 'Claude', chatgpt: 'ChatGPT', outra: cab.iaTexto || 'outra' })[cab.ia] : ('não informada (usarei ' + (ctx.estado.config.ia_padrao === 'chatgpt' ? 'ChatGPT' : 'Claude') + ')');
     var lista = h('div', { class: 'previa' });
@@ -122,11 +129,18 @@
             l.sugestao ? b('assoc', 'Associar a "' + l.sugestao.descricao + '"') : null,
             b('novo', 'Criar novo assunto'), b('ignorar', 'Ignorar linha'));
         }
+        var acoesMin = null;
+        if (l.cron && l.status !== 'erro') {
+          var dm = decMin[l.n] || 'ignorar';
+          function bm(valor, texto) { return h('button', { class: 'btn btn-peq ' + (dm === valor ? 'btn-primario' : 'btn-secundario'), onclick: function () { decMin[l.n] = valor; desenhar(); } }, texto); }
+          acoesMin = h('div', null, h('div', { class: 'pequeno alerta' }, 'Já há ' + l.cron.minutos + ' min do cronômetro para este assunto neste dia. O que fazer com os ' + l.valor.minutos + ' min do checkpoint?'),
+            h('div', { class: 'barra-acoes' }, bm('ignorar', 'Ignorar os minutos do checkpoint'), bm('somar', 'Somar'), bm('substituir', 'Substituir os do cronômetro')));
+        }
         var aviso = l.status === 'erro' ? l.msg : (l.precisaDecidir ? 'Assunto "' + l.assunto + '" não encontrado em ' + l.disc.nome + '.' + (l.sugestao ? ' O mais parecido é "' + l.sugestao.descricao + '".' : '') : l.msg);
         lista.appendChild(h('div', { class: 'previa-linha' },
           h('span', { class: 'chip ' + s[1] }, s[0]),
           h('div', { class: 'previa-texto' }, h('div', null, h('strong', null, l.tipo), ' · ', rotulo(l)),
-            aviso ? h('div', { class: 'pequeno ' + (l.status === 'erro' ? 'erro' : 'alerta') }, aviso) : null, acoes)));
+            aviso ? h('div', { class: 'pequeno ' + (l.status === 'erro' ? 'erro' : 'alerta') }, aviso) : null, acoes, acoesMin)));
       });
       var validas = lido.linhas.filter(function (l) { return l.status !== 'erro' && decisoes[l.n] !== 'ignorar'; }).length;
       conf.disabled = pend > 0 || validas === 0;
@@ -136,7 +150,16 @@
 
     conf.addEventListener('click', function () {
       conf.disabled = true;
+      var substituir = [], minOrig = {};
+      lido.linhas.forEach(function (l) {
+        if (!l.cron) return;
+        var dm = decMin[l.n] || 'ignorar';
+        minOrig[l.n] = l.valor.minutos;
+        if (dm === 'ignorar') l.valor.minutos = 0;
+        if (dm === 'substituir') substituir = substituir.concat(l.cron.ids);
+      });
       var dados = P.payloadCheckpoint(lido, decisoes, { concurso_id: c.id, hash: hash, ia_padrao: ctx.estado.config.ia_padrao || 'claude' });
+      lido.linhas.forEach(function (l) { if (minOrig[l.n] !== undefined) l.valor.minutos = minOrig[l.n]; });
       ctx.sb.rpc('a360_importar_checkpoint', { dados: dados }).then(function (r) {
         if (r.error) {
           conf.disabled = false;
@@ -146,6 +169,7 @@
           return;
         }
         var d = r.data;
+        if (substituir.length) ctx.sb.from('a360_sessoes').update({ excluido_em: new Date().toISOString() }).in('id', substituir).then(function () {});
         el.innerHTML = '';
         el.appendChild(h('div', { class: 'cartao ok-caixa' },
           h('h2', null, 'Checkpoint de ' + U.dataBR(d.data) + ' importado'),

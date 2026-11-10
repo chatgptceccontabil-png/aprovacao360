@@ -151,7 +151,7 @@
     $('usuario-nome').textContent = meta.full_name || meta.name || user.email || '';
     if (meta.avatar_url) { $('usuario-foto').src = meta.avatar_url; $('usuario-foto').hidden = false; }
     mostrar('app');
-    carregarBase().then(rotear);
+    carregarBase().then(function () { if (window.A360CRON) A360CRON.iniciar(ctx); rotear(); });
   }
 
   // Garante a linha de configurações e carrega os concursos
@@ -225,7 +225,7 @@
     hoje: 'Hoje', importar: 'Importar', edital: 'Edital verticalizado', revisoes: 'Revisões', erros: 'Caderno de erros',
     ciclo: 'Ciclo de estudos', simulados: 'Simulados', biblioteca: 'Biblioteca', concursos: 'Concursos', configuracoes: 'Configurações e backup'
   };
-  var ETAPA = { biblioteca: 7 };
+  var ETAPA = {};
   var geracao = 0;
 
   function rotear() {

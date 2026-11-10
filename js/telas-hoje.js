@@ -65,12 +65,13 @@
         sb.from('a360_sessoes').select('data,minutos,status,disciplina_id,concurso_id').gte('data', desde).is('excluido_em', null),
         sb.from('a360_questoes').select('data,feitas,acertos,disciplina_id').gte('data', desde).is('excluido_em', null),
         sb.from('a360_planejamentos').select('*').eq('concurso_id', c.id).eq('vigente', true).is('excluido_em', null).maybeSingle(),
-        sb.from('a360_checkpoints').select('id,data_referencia,proxima,propostas,correcoes,propostas_vistas,criado_em').eq('concurso_id', c.id).is('excluido_em', null).order('criado_em', { ascending: false }).limit(10)
+        sb.from('a360_checkpoints').select('id,data_referencia,proxima,propostas,correcoes,propostas_vistas,criado_em').eq('concurso_id', c.id).is('excluido_em', null).order('criado_em', { ascending: false }).limit(10),
+        sb.from('a360_links').select('titulo,url,disciplina_id,assunto_id,favorito').eq('concurso_id', c.id).is('excluido_em', null)
       ]).then(function (r) {
         var erroVisao = r[0].error && /a360_v_revisoes|a360_v_assuntos_stats/.test(String(r[0].error.message));
         return montar(ctx, c, discs, {
           revisoes: r[0].data || [], erros: r[1].data || [], sessoes: r[2].data || [], questoes: r[3].data || [],
-          plano: r[4].data || null, checkpoints: r[5].data || [], faltaEtapa4: erroVisao
+          plano: r[4].data || null, checkpoints: r[5].data || [], links: (r[6] && r[6].data) || [], faltaEtapa4: erroVisao
         }, hoje);
       });
     });
@@ -117,6 +118,13 @@
       semanaQuestoes: qSem, metaQuestoes: x.plano ? x.plano.meta_questoes_semana : 0,
       revisoes: revHoje, recorrentes: recItens
     };
+    // RN12: até 5 links do assunto (depois os da disciplina inteira), favoritos primeiro
+    function linksDe(a, d) {
+      var fav = function (x, y) { return (y.favorito ? 1 : 0) - (x.favorito ? 1 : 0); };
+      var doAss = x.links.filter(function (l) { return l.assunto_id === a.id; }).sort(fav);
+      var daDisc = x.links.filter(function (l) { return !l.assunto_id && l.disciplina_id === d.id; }).sort(fav);
+      return doAss.concat(daDisc).slice(0, 5);
+    }
     function estudoDe(a, d) {
       if (!a) return null;
       return { disciplina: d.nome, assunto: a.descricao, status: a.status, ultimo_ponto: a.ultimo_ponto, dificuldades: a.dificuldades, feitas: a.stats ? a.stats.feitas : 0, acertos: a.stats ? a.stats.acertos : 0 };
@@ -125,8 +133,8 @@
       discs: discs, rows: rows, prox: prox, revHoje: revHoje, rec: rec, x: x, horas: horas, minTot: minTot, qSem: qSem, q30: q30, a30: a30, seq: seq,
       prompt: function (tipo, assuntoId) {
         var d = Object.assign({ tipo: tipo }, base);
-        if (tipo === 'geral' && prox && prox.assunto) d.estudo = estudoDe(prox.assunto, idsDisc[prox.disciplina.id]);
-        if (tipo === 'assunto') { var i = porId[assuntoId]; d.estudo = i ? estudoDe(i.a, i.d) : null; }
+        if (tipo === 'geral' && prox && prox.assunto) { d.estudo = estudoDe(prox.assunto, idsDisc[prox.disciplina.id]); d.links = linksDe(prox.assunto, idsDisc[prox.disciplina.id]); }
+        if (tipo === 'assunto') { var i = porId[assuntoId]; d.estudo = i ? estudoDe(i.a, i.d) : null; d.links = i ? linksDe(i.a, i.d) : []; }
         if (tipo === 'erros') d.recorrentes = x.erros.slice(0, 15).map(function (e) { var i = porId[e.assunto_id]; return i ? { disciplina: i.d.nome, assunto: i.a.descricao, motivo: e.motivo, descricao: e.descricao } : null; }).filter(Boolean);
         return C.montarPrompt(d);
       }
@@ -216,6 +224,14 @@
             ctx.sb.from('a360_checkpoints').update({ propostas_vistas: true }).eq('id', k.id).then(function (r) { if (r.error) { ctx.aviso(UI.erroBanco(r.error)); ev.target.disabled = false; return; } ctx.aviso('Ok.'); ctx.rotear(); });
           } }, 'Marcar como vista'))));
       });
+
+      // RN27: lembrete de backup semanal
+      var ub = ctx.estado.config && ctx.estado.config.ultimo_backup;
+      if (!ub || (Date.now() - new Date(ub).getTime()) > 7 * 86400000) {
+        var bb = h('button', { class: 'btn btn-secundario btn-peq' }, 'Baixar backup agora');
+        bb.addEventListener('click', function () { bb.disabled = true; A360EXP.backup(ctx).then(function () { ctx.aviso('Backup baixado.'); ctx.rotear(); }, function (e) { bb.disabled = false; ctx.aviso(UI.erroBanco(e)); }); });
+        area.appendChild(h('section', { class: 'cartao aviso-linha' }, h('span', null, h('strong', { class: 'alerta' }, 'Faça seu backup semanal (1 clique). '), ub ? 'O último foi em ' + U.dataBR(String(ub).slice(0, 10)) + '.' : 'Você ainda não fez nenhum.'), bb));
+      }
 
       // 6. Próxima atividade combinada
       var ult = P.x.checkpoints.filter(function (k) { return k.proxima; })[0];

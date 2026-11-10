@@ -17,7 +17,7 @@ function q(tabela) {
     is(k, v) { filtros.push(r => (r[k] ?? null) === v); return api; },
     in(k, vs) { filtros.push(r => vs.includes(r[k])); return api; },
     gte(k, v) { filtros.push(r => (r[k] || '') >= v); return api; },
-    order() { return api; }, limit() { return api; },
+    order() { return api; }, limit() { return api; }, range() { return api; },
     single() { one = true; return api; }, maybeSingle() { maybe = true; return api; },
     then(res, rej) {
       try {
@@ -41,6 +41,9 @@ function regRev(ass, R, data){ const ET=[1,7,30,60]; let p=T('a360_revisoes').fi
   if(p){p.status='concluida';p.resultado=R;et=p.etapa;orig=p.data_estudo_original;} let i=ET.indexOf(et); if(R>=85)i=Math.min(i+1,3); else if(R<70)i=Math.max(i-1,0);
   const n=ET[i]; T('a360_revisoes').push({id:'id'+(++seq),assunto_id:ass,etapa:n,data_prevista:addD(data,n),data_estudo_original:orig,status:'pendente',excluido_em:null}); return {etapa:n,data_prevista:addD(data,n)}; }
 function rpc(nome, args) {
+  if (nome==='a360_registrar_sessao') { const d=args.dados; T('a360_sessoes').push({id:'id'+(++seq),...d,status:'REALIZADO',excluido_em:null}); let pr=null;
+    if (d.assunto_id && !T('a360_revisoes').some(r=>r.assunto_id===d.assunto_id)) { pr=addD(d.data,1); T('a360_revisoes').push({id:'id'+(++seq),assunto_id:d.assunto_id,etapa:1,data_prevista:pr,data_estudo_original:d.data,status:'pendente',excluido_em:null}); }
+    return Promise.resolve({data:{sessao_id:'s',primeira_revisao:pr},error:null}); }
   if (nome==='a360_aprovar_planejamento') { const d=args.dados; T('a360_planejamentos').forEach(p=>{if(p.concurso_id===d.concurso_id)p.vigente=false;}); const v=T('a360_planejamentos').filter(p=>p.concurso_id===d.concurso_id).length+1;
     T('a360_planejamentos').push({id:'id'+(++seq),concurso_id:d.concurso_id,versao:v,horas_semana:d.horas_semana,meta_questoes_semana:d.meta_questoes_semana,observacoes:d.observacoes,vigente:true,data_aprovacao:'2026-11-09',excluido_em:null});
     d.distribuicao.forEach(x=>{T('a360_disciplinas').find(z=>z.id===x.disciplina_id).horas_ciclo=x.horas;}); return Promise.resolve({data:{versao:v},error:null}); }
@@ -70,7 +73,7 @@ w.supabase = { createClient: () => ({ from: q, rpc, auth: {
   onAuthStateChange(cb) { setTimeout(() => cb('SIGNED_IN', { user: { id: UID, email: 'eu@x.com', user_metadata: {} } }), 0); },
   getSession: () => Promise.resolve({ data: { session: { user: { id: UID } } }, error: null }), signOut: () => Promise.resolve({}) } }) };
 w.A360_CONFIG = { SUPABASE_URL: 'https://a.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_x' };
-['js/util.js','js/parsers.js','js/calc.js','js/ui.js','js/telas-base.js','js/telas-edital.js','js/telas-checkpoint.js','js/telas-hoje.js','js/telas-estudo.js','js/app.js'].forEach(f => w.eval(fs.readFileSync(R + f, 'utf8')));
+['js/util.js','js/parsers.js','js/calc.js','js/ui.js','js/telas-base.js','js/telas-edital.js','js/telas-checkpoint.js','js/telas-hoje.js','js/telas-estudo.js','js/telas-extra.js','js/exportar.js','js/app.js'].forEach(f => w.eval(fs.readFileSync(R + f, 'utf8')));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const $ = s => w.document.querySelector(s), txt = () => w.document.getElementById('conteudo').textContent.replace(/\s+/g, ' ');
 const go = async h => { w.location.hash = h; await sleep(60); };
@@ -114,7 +117,7 @@ ASSUNTO | Português | 1 | Crase
   console.log('12 cadastrado:', T('a360_concursos').length, '| prioritário do novo:', T('a360_concursos')[1].prioritario);
   await go('#/configuracoes'); console.log('13 config:', /Suas IAs/.test(txt()));
   await go('#/hoje'); console.log('14 hoje:', /Edital coberto/.test(txt()), /dias até a prova|Dias até a prova/.test(txt()));
-  await go('#/biblioteca'); console.log('15 placeholder:', /etapa 7/.test(txt()));
+  console.log('15 (sem telas pendentes)');
   // ---- etapa 4 ----
   const cp = `=== CHECKPOINT ===
 data: 2026-11-09
@@ -185,5 +188,42 @@ PROXIMA | /aula Direito Tributário > Competência tributária
   si[3].value = '58'; si[6].value = '40'; si[7].value = '30'; click(btn('Registrar simulado')); await sleep(100);
   console.log('43 salvo:', /72,5%/.test(txt()), !!w.document.querySelector('svg.grafico'), T('a360_simulado_disciplinas').length);
   click(btn('Detalhe')); await sleep(20); console.log('44 detalhe:', /75,0%/.test($('.painel').textContent));
+  w.document.querySelectorAll('.painel-fundo').forEach(x=>x.remove());
+  // ---- etapa 7 ----
+  click(btn('▶ Cronômetro')); await sleep(60);
+  const selA = w.document.querySelectorAll('.painel select')[1]; selA.value = selA.options[1].value; click(btn('▶ Começar')); await sleep(20);
+  const k = Object.keys(w.localStorage).find(x => x.startsWith('a360_cron_')); const st = JSON.parse(w.localStorage.getItem(k));
+  console.log('45 cronômetro ligado:', !!st, !!w.document.querySelector('.cron-pilula'), st.disciplina_nome);
+  st.inicio = Date.now() - 5 * 60000 - 2000; w.localStorage.setItem(k, JSON.stringify(st));
+  click(w.document.querySelector('[aria-label="Parar e salvar"]')); await sleep(20);
+  console.log('46 confirmar:', /Salvar 5 min/.test($('.painel').textContent));
+  const nSess = T('a360_sessoes').length; click(btn('Salvar')); await sleep(60);
+  console.log('47 sessão salva:', T('a360_sessoes').length === nSess + 1, T('a360_sessoes').slice(-1)[0].origem, !w.localStorage.getItem(k), !!w.document.querySelector('.btn-cron'));
+  // RN18
+  const cron = T('a360_sessoes').slice(-1)[0]; cron.data = new Date(Date.now() - 3*3600000).toISOString().slice(0,10);
+  const assNome = T('a360_assuntos').find(a => a.id === cron.assunto_id).descricao, discNome = T('a360_disciplinas').find(d => d.id === cron.disciplina_id).nome;
+  await go('#/importar'); $('#txt-checkpoint').value = '=== CHECKPOINT ===\ndata: ' + cron.data + '\nconcurso: ISS-SP-AFTM-2026\nSESSAO | ' + discNome + ' | ' + assNome + ' | aula | REALIZADO | 40\n=== FIM ==='; click(btn('Analisar')); await sleep(80);
+  console.log('48 RN18 aviso:', /Já há 5 min do cronômetro/.test(txt()));
+  click(btn('Confirmar')); await sleep(80); console.log('49 minutos ignorados:', T('a360_sessoes').slice(-1)[0].minutos === 0);
+  // biblioteca
+  await go('#/biblioteca'); await sleep(60); console.log('50 biblioteca vazia:', /Guarde aqui/.test(txt()));
+  click(btn('+ Link')); await sleep(20);
+  let li = w.document.querySelectorAll('.painel input'); li[0].value = 'CTN – Planalto'; li[1].value = 'planalto.gov.br'; click(btn('Salvar link')); await sleep(20);
+  console.log('51 validação URL:', /http:\/\/ ou https:\/\//.test($('.painel').textContent));
+  li[1].value = 'https://www.planalto.gov.br/ccivil_03/leis/l5172compilado.htm';
+  const ps = w.document.querySelectorAll('.painel select'); ps[1].value = T('a360_disciplinas').find(d=>d.nome==='Direito Tributário').id; ps[1].dispatchEvent(new w.Event('change'));
+  const pa3 = w.document.querySelectorAll('.painel select')[2]; pa3.value = T('a360_assuntos').find(a=>a.descricao==='Competência tributária').id;
+  click(btn('Salvar link')); await sleep(80);
+  console.log('52 link salvo:', /CTN – Planalto/.test(txt()), T('a360_links').length);
+  await go('#/edital'); await sleep(60);
+  const bEst = [...w.document.querySelectorAll('.linha-assunto')].find(x => /Competência tributária/.test(x.textContent)).querySelector('button'); click(bEst); await sleep(80);
+  const pa4 = [...w.document.querySelectorAll('.prompt-area')].pop(); console.log('53 link no prompt:', /Material: CTN – Planalto – https:/.test(pa4.value));
+  w.document.querySelectorAll('.painel-fundo').forEach(x=>x.remove());
+  // ---- etapa 8 ----
+  await go('#/hoje'); await sleep(80); console.log('54 lembrete backup:', /Faça seu backup semanal/.test(txt()));
+  await go('#/configuracoes'); await sleep(20);
+  click(btn('Exportar Registro Mestre')); await sleep(120); console.log('55 registro:', baixados.includes('registro-mestre.md'));
+  click(btn('Baixar backup')); await sleep(200); console.log('56 backup:', baixados.some(b => /^backup-aprovacao360-.*\.json$/.test(b)), !!T('a360_configuracoes')[0].ultimo_backup);
+  await go('#/hoje'); await sleep(80); console.log('57 lembrete some:', !/Faça seu backup semanal/.test(txt()));
   process.exit(0);
 })().catch(e => { console.error('FALHOU', e); process.exit(1); });
