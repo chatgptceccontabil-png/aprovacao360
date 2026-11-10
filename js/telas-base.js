@@ -235,5 +235,7 @@
       h('div', { class: 'barra-acoes' }, bReg, bBak, bRes, arq),
       h('p', { class: 'pequeno suave' }, 'Último Registro Mestre: ' + ur + ' · último backup: ' + ub + ' · conta: ' + (ctx.estado.usuario.email || '')),
       h('p', { class: 'pequeno suave' }, 'O caderno de erros em CSV (Excel) fica na tela Erros.')));
+    el.appendChild(h('div', { class: 'cartao' }, h('h2', null, 'Conta'), h('p', { class: 'suave' }, ctx.estado.usuario.email || ''),
+      h('button', { class: 'btn btn-secundario', onclick: function () { ctx.sair(); } }, 'Sair da conta')));
   };
 })();

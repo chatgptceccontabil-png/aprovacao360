@@ -4,6 +4,7 @@ Plataforma pessoal de estudos para concursos em que **a IA (Claude ou ChatGPT) �
 
 - **Endereço:** https://chatgptceccontabil-png.github.io/aprovacao360/
 - **Custo:** R$ 0 (GitHub Pages + Supabase gratuito)
+- **Como usar (1 página):** [`docs/GUIA-DE-USO.md`](docs/GUIA-DE-USO.md)
 - **Configuração inicial:** [`docs/GUIA-CONFIGURACAO.md`](docs/GUIA-CONFIGURACAO.md)
 
 ## Estrutura
@@ -20,7 +21,8 @@ Plataforma pessoal de estudos para concursos em que **a IA (Claude ou ChatGPT) �
 | `supabase/04-ciclo-simulados.sql` | Planejamento do ciclo e simulados (rodar depois do 03) |
 | `supabase/05-sessoes.sql` | Sessões do cronômetro (rodar depois do 04) |
 | `testes/` | Testes automáticos (`node testes/edital.test.js`, `node testes/checkpoint.test.js`, `node testes/calc.test.js`, `node testes/registro.test.js`) |
-| `docs/` | Guias |
+| `manifest.json`, `icones/` | App para instalar no celular |
+| `docs/` | Guias, projeto, prompts das IAs e verificação final |
 
 ## Andamento da construção
 
@@ -32,4 +34,4 @@ Plataforma pessoal de estudos para concursos em que **a IA (Claude ou ChatGPT) �
 - [x] Etapa 6: erros, ciclo e simulados (rodar `supabase/04-ciclo-simulados.sql`)
 - [x] Etapa 7: cronômetro e biblioteca (rodar `supabase/05-sessoes.sql`)
 - [x] Etapa 8: Registro Mestre, backup e exportações
-- [ ] Etapa 9: app no celular (PWA) e testes finais
+- [x] Etapa 9: app no celular (PWA) e testes finais — ver [`docs/VERIFICACAO-FINAL.md`](docs/VERIFICACAO-FINAL.md)

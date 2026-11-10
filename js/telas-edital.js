@@ -39,7 +39,7 @@
     var aba = /aba=edital/.test(location.hash) ? 'edital' : (ctx.estado.concursos.length ? 'checkpoint' : 'edital');
     el.appendChild(h('h1', null, 'Importar'));
     var abas = h('div', { class: 'abas', role: 'tablist' });
-    var corpo = h('div');
+    var corpo = h('div', { class: 'area' });
     function mudar(nova) {
       aba = nova;
       abas.querySelectorAll('button').forEach(function (b) { var on = b.getAttribute('data-aba') === aba; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
@@ -135,7 +135,7 @@
       el.appendChild(UI.vazio('Nenhum edital ainda.', 'No Claude ou no ChatGPT, use /edital e cole aqui o bloco EDITAL.', [h('a', { class: 'btn btn-primario', href: '#/importar?aba=edital' }, 'Importar EDITAL')]));
       return;
     }
-    var area = h('div', null, h('p', { class: 'suave' }, 'Carregando…'));
+    var area = h('div', { class: 'area' }, h('p', { class: 'suave' }, 'Carregando…'));
     el.appendChild(area);
     return carregarEdital(ctx.sb, c.id).then(function (discs) {
       if (!vivo()) return;

@@ -154,7 +154,7 @@
         [h('a', { class: 'btn btn-primario', href: '#/importar?aba=edital' }, 'Importar EDITAL'), h('a', { class: 'btn btn-secundario', href: '#/concursos' }, 'Novo concurso')]));
       return;
     }
-    var area = h('div', null, h('p', { class: 'suave' }, 'Carregando…'));
+    var area = h('div', { class: 'area' }, h('p', { class: 'suave' }, 'Carregando…'));
     el.appendChild(area);
     return carregarDados(ctx, c).then(function (P) {
       if (!vivo()) return;
@@ -197,7 +197,7 @@
       P.revHoje.slice(0, 8).forEach(function (r) {
         var atraso = U.difDias(hoje, r.data_prevista);
         colRev.appendChild(h('a', { class: 'linha-rev-hoje', href: '#/revisoes' },
-          h('div', null, h('div', { class: 'forte' }, r.assunto), h('div', { class: 'pequeno suave' }, r.disciplina + ' · etapa ' + r.etapa)),
+          h('div', null, h('div', { class: 'forte' }, r.assunto), h('div', { class: 'pequeno suave' }, r.disciplina + ' · etapa de ' + r.etapa + (r.etapa === 1 ? ' dia' : ' dias'))),
           h('span', { class: 'chip ' + (atraso > 0 ? 'st-nao' : 'st-estudo') }, atraso > 0 ? 'atraso ' + atraso + 'd' : 'hoje')));
       });
       if (P.revHoje.length > 8) colRev.appendChild(h('a', { href: '#/revisoes', class: 'pequeno' }, '+ ' + (P.revHoje.length - 8) + ' revisões'));

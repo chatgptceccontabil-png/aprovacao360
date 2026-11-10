@@ -668,3 +668,11 @@ Regras obrigatórias:
    rodar o SQL, criar o OAuth do Google, ligar o Google no Supabase (com a URL de
    redirecionamento do GitHub Pages) e publicar no GitHub Pages.
 ```
+
+## 13. Notas de implementação (v1.2 — 09/11/2026)
+
+- **Login:** e-mail e senha (Supabase Auth) no lugar do Google, a pedido do usuário. Recomendado desligar "Allow new users to sign up" depois de criar a conta.
+- **Banco:** `supabase/schema.sql` + `02-importar-edital.sql` + `03-checkpoint-revisoes.sql` + `04-ciclo-simulados.sql` + `05-sessoes.sql`, rodados nessa ordem.
+- **Gráficos:** feitos em CSS/SVG próprios (sem Chart.js).
+- **PWA:** manifesto e ícones, sem service worker.
+- **Verificação:** ver `docs/VERIFICACAO-FINAL.md`.

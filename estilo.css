@@ -96,7 +96,9 @@ code { background: #EEF1F5; padding: 1px 6px; border-radius: 4px; font-size: 13p
 .alerta { color: #8A5200; }
 .sucesso { color: var(--sucesso); }
 .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; }
-.conteudo > div > * + * { margin-top: 16px; }
+.conteudo:focus { outline: none; }
+.tela, .area, .lista-disciplinas { display: flex; flex-direction: column; gap: 16px; }
+.tela > h1, .tela > .titulo-acoes { margin-bottom: 0; }
 
 /* Botões extras */
 a.btn { display: inline-flex; align-items: center; text-decoration: none; }
@@ -288,10 +290,15 @@ h3 { font-size: 15px; color: var(--marinho); margin: 16px 0 8px; }
 
 /* Celular: menu vira barra horizontal rolável */
 @media (max-width: 720px) {
-  .cabecalho { padding: 10px 16px; }
+  .cabecalho { padding: 10px 16px; padding-top: calc(10px + env(safe-area-inset-top)); gap: 10px; }
+  .marca { flex: 1 1 auto; font-size: 16px; }
+  .seletor-concurso { order: 10; flex: 1 1 100%; }
+  .seletor-concurso select { max-width: none; width: 100%; }
+  .espaco { display: none; }
+  .seq { display: none; }
   .corpo { padding: 16px; gap: 16px; }
   .menu { max-width: none; flex-direction: row; overflow-x: auto; flex-basis: 100%; }
   .menu a { white-space: nowrap; }
-  .usuario span { display: none; }
+  .usuario { display: none; }
   .cron-disc { display: none; }
 }

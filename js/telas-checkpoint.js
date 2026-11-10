@@ -197,7 +197,7 @@
     el.appendChild(h('h1', null, 'Revisões'));
     if (!c) { el.appendChild(UI.vazio('Nenhum concurso ativo.', 'Importe o EDITAL para começar.', [h('a', { class: 'btn btn-primario', href: '#/importar' }, 'Importar EDITAL')])); return; }
     el.appendChild(h('p', { class: 'suave' }, 'Intervalos de 1 → 7 → 30 → 60 dias. Acerto de 85% ou mais avança uma etapa, de 70% a 84% repete a etapa e abaixo de 70% volta uma. O resultado normalmente chega pelo CHECKPOINT, mas você também pode registrar aqui.'));
-    var area = h('div', null, h('p', { class: 'suave' }, 'Carregando…'));
+    var area = h('div', { class: 'area' }, h('p', { class: 'suave' }, 'Carregando…'));
     el.appendChild(area);
     return ctx.sb.from('a360_v_revisoes').select('*').eq('concurso_id', c.id).order('data_prevista').then(function (r) {
       if (!vivo()) return;
@@ -259,7 +259,7 @@
       });
     });
     return h('div', { class: 'linha-revisao' },
-      h('div', { class: 'rev-info' }, h('div', { class: 'forte' }, x.assunto), h('div', { class: 'pequeno suave' }, x.disciplina + ' · etapa ' + x.etapa + ' dias · prevista ' + U.dataBR(x.data_prevista) + (atraso > 0 ? ' · atraso de ' + atraso + ' dia(s)' : ''))),
+      h('div', { class: 'rev-info' }, h('div', { class: 'forte' }, x.assunto), h('div', { class: 'pequeno suave' }, x.disciplina + ' · etapa de ' + x.etapa + (x.etapa === 1 ? ' dia' : ' dias') + ' · prevista ' + U.dataBR(x.data_prevista) + (atraso > 0 ? ' · atraso de ' + atraso + ' dia(s)' : ''))),
       h('div', { class: 'rev-acoes' }, pct, reg, data, repro));
   }
 })();

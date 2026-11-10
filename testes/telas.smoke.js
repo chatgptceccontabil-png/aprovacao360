@@ -3,7 +3,7 @@ const { JSDOM } = require('jsdom');
 const fs = require('fs'), path = require('path'), R = path.join(__dirname, '..') + '/';
 const html = fs.readFileSync(R + 'index.html', 'utf8').replace(/<script src="https:[^"]+"><\/script>/, '').replace(/<script src="([^"]+)"><\/script>/g, '');
 const dom = new JSDOM(html, { url: 'https://x.github.io/aprovacao360/', runScripts: 'outside-only', pretendToBeVisual: true });
-const w = dom.window; w.confirm = () => true; w.console = console; const abertos = []; w.open = u => { abertos.push(u); return null; }; w.document.execCommand = () => true; w.URL.createObjectURL = () => 'blob:x'; w.URL.revokeObjectURL = () => {}; w.HTMLAnchorElement.prototype.click = function(){ baixados.push(this.download); }; const baixados = [];
+const w = dom.window; w.scrollTo = () => {}; w.confirm = () => true; w.console = console; const abertos = []; w.open = u => { abertos.push(u); return null; }; w.document.execCommand = () => true; w.URL.createObjectURL = () => 'blob:x'; w.URL.revokeObjectURL = () => {}; w.HTMLAnchorElement.prototype.click = function(){ baixados.push(this.download); }; const baixados = [];
 // ---- banco falso ----
 const DB = {}; let seq = 0; const UID = 'u1';
 const T = n => (DB[n] = DB[n] || []);
@@ -13,6 +13,7 @@ function q(tabela) {
     select(c) { if (op === 'select') { if (/\(/.test(c || '')) embed = c; } api._ret = true; return api; },
     insert(o) { op = 'insert'; payload = Array.isArray(o) ? o : [o]; return api; },
     update(o) { op = 'update'; payload = o; return api; },
+    upsert(o) { op = 'upsert'; payload = o; return api; },
     eq(k, v) { filtros.push(r => r[k] === v); return api; },
     is(k, v) { filtros.push(r => (r[k] ?? null) === v); return api; },
     in(k, vs) { filtros.push(r => vs.includes(r[k])); return api; },
@@ -23,6 +24,7 @@ function q(tabela) {
       try {
         let data;
         if (op === 'insert') { data = payload.map(p => { const r = Object.assign({ id: 'id' + (++seq), usuario_id: UID, excluido_em: null }, p); if (tabela === 'a360_assuntos') r.status = r.status || 'nao_iniciado'; T(tabela).push(r); return r; }); }
+        else if (op === 'upsert') { data = payload.map(p => { const i = T(tabela).findIndex(r => r.id === p.id); if (i >= 0) T(tabela)[i] = Object.assign({}, p); else T(tabela).push(Object.assign({}, p)); return p; }); }
         else if (op === 'update') { data = T(tabela).filter(r => filtros.every(f => f(r))); data.forEach(r => Object.assign(r, payload)); }
         else if (tabela === 'a360_v_revisoes') { data = T('a360_revisoes').filter(r=>r.status==='pendente').map(r=>{const a=T('a360_assuntos').find(x=>x.id===r.assunto_id);const d=T('a360_disciplinas').find(x=>x.id===a.disciplina_id);return {...r,assunto:a.descricao,disciplina:d.nome,disciplina_id:d.id,concurso_id:d.concurso_id};}).filter(r => filtros.every(f => f(r))); }
         else if (tabela === 'a360_v_assuntos_stats') { data = T('a360_assuntos').map(a=>{const d=T('a360_disciplinas').find(x=>x.id===a.disciplina_id);const q=T('a360_questoes').filter(x=>x.assunto_id===a.id);const r=T('a360_revisoes').find(x=>x.assunto_id===a.id&&x.status==='pendente');return {assunto_id:a.id,concurso_id:d.concurso_id,feitas:q.reduce((s,x)=>s+x.feitas,0),acertos:q.reduce((s,x)=>s+x.acertos,0),dias:1,proxima_revisao:r?r.data_prevista:null,etapa_revisao:r?r.etapa:null};}).filter(r => filtros.every(f => f(r))); }
@@ -225,5 +227,12 @@ PROXIMA | /aula Direito Tributário > Competência tributária
   click(btn('Exportar Registro Mestre')); await sleep(120); console.log('55 registro:', baixados.includes('registro-mestre.md'));
   click(btn('Baixar backup')); await sleep(200); console.log('56 backup:', baixados.some(b => /^backup-aprovacao360-.*\.json$/.test(b)), !!T('a360_configuracoes')[0].ultimo_backup);
   await go('#/hoje'); await sleep(80); console.log('57 lembrete some:', !/Faça seu backup semanal/.test(txt()));
+  // restauração (RN25)
+  const copia = { app: 'aprovacao360', versao_schema: 1, exportado_em: new Date().toISOString(), tabelas: JSON.parse(JSON.stringify(DB)) };
+  const alvo = T('a360_assuntos')[0]; alvo.excluido_em = '2026-11-09T00:00:00Z'; alvo.descricao = 'ALTERADO';
+  const res = await w.A360EXP.restaurar({ sb: w.supabase.createClient(), estado: { usuario: { id: UID } } }, copia);
+  const volta = T('a360_assuntos').find(a => a.id === alvo.id);
+  console.log('58 restaurado:', res.problemas.length === 0, res.total > 10, volta.excluido_em === null, volta.descricao !== 'ALTERADO');
+  console.log('59 valida arquivo:', w.A360EXP.validarBackup({ foo: 1 }) !== null, w.A360EXP.validarBackup(copia) === null);
   process.exit(0);
 })().catch(e => { console.error('FALHOU', e); process.exit(1); });

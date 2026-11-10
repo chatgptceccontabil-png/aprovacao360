@@ -29,7 +29,7 @@
   A360T.erros = function (ctx, el, vivo) {
     el.appendChild(h('h1', null, 'Caderno de erros'));
     var c = semConcurso(ctx, el); if (!c) return;
-    var area = h('div', null, h('p', { class: 'suave' }, 'Carregando…'));
+    var area = h('div', { class: 'area' }, h('p', { class: 'suave' }, 'Carregando…'));
     el.appendChild(area);
     return A360D.carregarEdital(ctx.sb, c.id).then(function (discs) {
       var ids = discs.map(function (d) { return d.id; });
@@ -170,7 +170,7 @@
   A360T.ciclo = function (ctx, el, vivo) {
     el.appendChild(h('h1', null, 'Ciclo de estudos'));
     var c = semConcurso(ctx, el); if (!c) return;
-    var area = h('div', null, h('p', { class: 'suave' }, 'Carregando…'));
+    var area = h('div', { class: 'area' }, h('p', { class: 'suave' }, 'Carregando…'));
     el.appendChild(area);
     var seg = C.inicioSemana(U.hojeISO());
     return Promise.all([
@@ -273,7 +273,7 @@
     var c = ctx.ativo();
     el.appendChild(h('div', { class: 'titulo-acoes' }, h('h1', null, 'Simulados'), c ? h('button', { class: 'btn btn-primario', id: 'btn-novo-sim' }, '+ Simulado') : null));
     if (!semConcurso(ctx, el)) return;
-    var area = h('div', null, h('p', { class: 'suave' }, 'Carregando…'));
+    var area = h('div', { class: 'area' }, h('p', { class: 'suave' }, 'Carregando…'));
     el.appendChild(area);
     return Promise.all([
       A360D.carregarEdital(ctx.sb, c.id),

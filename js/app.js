@@ -217,7 +217,8 @@
     rotear: function () { rotear(); },
     ir: function (tela) { if (window.location.hash === '#/' + tela) rotear(); else window.location.hash = '#/' + tela; },
     sequencia: function (n) { var el = $('seq'); if (el) { el.textContent = 'Sequência: ' + n + ' dia' + (n === 1 ? '' : 's'); el.hidden = false; } },
-    confirmar: function (texto) { return window.confirm(texto); }
+    confirmar: function (texto) { return window.confirm(texto); },
+    sair: function () { sair(); }
   };
 
   // ---------- navegação ----------
@@ -244,16 +245,18 @@
     if (!fn) {
       main.appendChild(A360U.h('h1', null, TITULOS[tela]));
       main.appendChild(A360U.h('div', { class: 'cartao vazio' }, A360U.h('p', null, 'Esta tela chega na etapa ' + (ETAPA[tela] || '') + ' da construção.')));
-      main.focus(); return;
+      try { main.focus({ preventScroll: true }); } catch (e) { main.focus(); }
+      window.scrollTo(0, 0); return;
     }
     // cada tela desenha num contêiner; se o usuário trocar de tela no meio do carregamento, o resultado antigo é descartado
-    var caixa = A360U.h('div');
+    var caixa = A360U.h('div', { class: 'tela' });
     main.appendChild(caixa);
     Promise.resolve(fn(ctx, caixa, function () { return minha === geracao; })).catch(function (e) {
       registrarResultado(e);
       caixa.appendChild(A360U.h('div', { class: 'cartao erro-caixa' }, 'Algo deu errado: ' + ((e && e.message) || e)));
     });
-    main.focus();
+    try { main.focus({ preventScroll: true }); } catch (e) { main.focus(); }
+    window.scrollTo(0, 0);
   }
 
   document.addEventListener('DOMContentLoaded', iniciar);

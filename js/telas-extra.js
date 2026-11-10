@@ -126,7 +126,7 @@
     var c = ctx.ativo();
     el.appendChild(h('div', { class: 'titulo-acoes' }, h('h1', null, 'Biblioteca'), c ? h('button', { class: 'btn btn-primario', id: 'btn-novo-link' }, '+ Link') : null));
     if (!c) { el.appendChild(UI.vazio('Nenhum concurso ativo.', 'Importe o EDITAL para começar.', [h('a', { class: 'btn btn-primario', href: '#/importar?aba=edital' }, 'Importar EDITAL')])); return; }
-    var area = h('div', null, h('p', { class: 'suave' }, 'Carregando…'));
+    var area = h('div', { class: 'area' }, h('p', { class: 'suave' }, 'Carregando…'));
     el.appendChild(area);
     return Promise.all([A360D.carregarEdital(ctx.sb, c.id), ctx.sb.from('a360_links').select('*').eq('concurso_id', c.id).is('excluido_em', null).order('titulo')]).then(function (r) {
       if (!vivo()) return;
